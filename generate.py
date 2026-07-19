@@ -5,6 +5,7 @@ import qrcode
 from io import BytesIO
 import base64
 import shutil
+import urllib.parse  # 新增：用于URL编码
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
@@ -37,12 +38,10 @@ def format_date(raw_date):
     if not raw_date:
         return '未选择日期 (有效期一年)'
     raw_date = raw_date.strip()
-    # 尝试匹配 YYYY-MM-DD
     match = re.match(r'^(\d{4})-(\d{1,2})-(\d{1,2})$', raw_date)
     if match:
         year, month, day = match.groups()
         return f'{year}年{int(month)}月{int(day)}日 (有效期一年)'
-    # 如果已经是其他格式，直接返回
     return raw_date
 
 def build_card(issue, style='A'):
@@ -74,8 +73,9 @@ def build_card(issue, style='A'):
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    # 二维码统一指向 index.html (B版)
-    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={title}'
+    # 🔥 关键修改：对标题进行URL编码，保证中文可访问
+    encoded_title = urllib.parse.quote(title)
+    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
@@ -258,11 +258,13 @@ html_A = f'''<!DOCTYPE html>
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             if (id) {{
+                // 🔥 解码 URL 编码的中文
+                const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
                 let found = false;
                 wrappers.forEach(w => {{
                     const title = w.getAttribute('data-title');
-                    if (title === id) {{
+                    if (title === decodedId) {{
                         w.style.display = 'block';
                         found = true;
                     }} else {{
@@ -318,11 +320,13 @@ html_B = f'''<!DOCTYPE html>
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             if (id) {{
+                // 🔥 解码 URL 编码的中文
+                const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
                 let found = false;
                 wrappers.forEach(w => {{
                     const title = w.getAttribute('data-title');
-                    if (title === id) {{
+                    if (title === decodedId) {{
                         w.style.display = 'block';
                         found = true;
                     }} else {{
