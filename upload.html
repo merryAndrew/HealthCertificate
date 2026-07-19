@@ -497,7 +497,9 @@
             <div class="avatar-zone">
                 <span class="file-btn" id="fileSelectBtn">选择文件</span>
                 <input type="file" id="avatarFile" accept="image/*" style="display:none;">
-                <span class="file-name" id="fileName">未选择</span>
+                <span class="file-name" id="fileName">
+                <!--未选择 -->
+                </span>
                 <button class="upload-btn" id="uploadAvatarBtn">上传并获取链接</button>
                 <span class="upload-status" id="uploadStatus"></span>
             </div>
@@ -520,7 +522,7 @@
         </div>
 
         <div class="view-area" id="viewResultArea">
-            <button class="btn-view" id="viewResultBtn">✅ 查看我的健康证</button>
+            <button class="btn-view" id="viewResultBtn">查看健康证</button>
         </div>
 
         <div class="status" id="statusMessage"></div>
@@ -694,10 +696,10 @@
                     avatarInput.value = url;
                     avatarPreview.src = url;
                     avatarPreview.style.display = 'block';
-                    uploadStatus.textContent = '✅ 上传成功！';
+                    uploadStatus.textContent = '成功！';
                     uploadStatus.className = 'upload-status success';
                 } else {
-                    throw new Error(data.error?.message || '上传失败');
+                    throw new Error(data.error?.message || '失败');
                 }
             } catch (err) {
                 uploadStatus.textContent = '❌ ' + err.message;
@@ -754,7 +756,7 @@
                         loaderContainer.classList.remove('active');
                         viewResultArea.classList.add('active');
                         submitBtn.disabled = false;
-                        statusDiv.textContent = '✅ 健康证已生成！';
+                        statusDiv.textContent = '健康证已生成！';
                         statusDiv.className = 'status success';
                         statusDiv.style.display = 'block';
                         nameInput.value = '';
