@@ -1,1 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>健康证 · 快速提交</title>
+    <style>
+        /* 极简手机友好样式 */
+        * { box-sizing: border-box; }
+        body {
+            background: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px 16px 40px;
+            margin: 0;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sub {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: -2px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: #334155;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            transition: border 0.2s;
+            margin-bottom: 14px;
+            outline: none;
+        }
+        input:focus, textarea:focus {
+            border-color: #3b82f6;
+            background: #ffffff;
+        }
+        textarea {
+            min-height: 70px;
+            resize: vertical;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+        .btn:active { background: #1d4ed8; }
+        .btn:disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .status {
+            margin-top: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: none;
+        }
+        .status.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .status.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .status.loading {
+            display: block;
+            background: #e0f2fe;
+            color: #075985;
+            border: 1px solid #bae6fd;
+        }
+        .token-hint {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: -8px;
+            margin-bottom: 12px;
+        }
+        .token-hint a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 24px;
+        }
+        .inline-flex {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .inline-flex input {
+            flex: 1;
+        }
+        .badge {
+            background: #e2e8f0;
+            border-radius: 20px;
+            padding: 2px 12px;
+            font-size: 12px;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📋 健康证 · 快速提交</h1>
+    <div class="sub">填写后自动创建 Issue</div>
 
+    <!-- Token 设置（首次使用） -->
+    <div class="card" id="tokenCard">
+        <label>🔑 你的 GitHub Token</label>
+        <input type="password" id="tokenInput" placeholder="输入 Personal Access Token" value="">
+        <div class="token-hint">
+            <a href="https://github.com/settings/tokens/new" target="_blank">点此生成 Token</a> （需勾选 <code>repo</code> 权限）
+        </div>
+        <button class="btn" id="saveTokenBtn" style="background:#475569;">保存 Token</button>
+        <div id="tokenStatus" style="margin-top:8px;font-size:13px;color:#64748b;"></div>
+    </div>
+
+    <!-- 主表单 -->
+    <div class="card" id="formCard">
+        <label>👤 姓名 *</label>
+        <input type="text" id="nameInput" placeholder="例如：张三" required>
+
+        <label>🆔 健康证编号 *</label>
+        <input type="text" id="idInput" placeholder="例如：HK-2026-0001" required>
+
+        <label>📅 有效日期</label>
+        <input type="date" id="dateInput">
+
+        <label>📸 头像图片 URL</label>
+        <input type="url" id="avatarInput" placeholder="粘贴图片链接（如 Imgur 等）">
+        <div style="font-size:12px;color:#94a3b8;margin-top:-8px;margin-bottom:12px;">
+            💡 手机可先用其他 App 上传图片，复制链接粘贴到这里
+        </div>
+
+        <label>📝 备注（可选）</label>
+        <textarea id="noteInput" placeholder="其他补充信息"></textarea>
+
+        <button class="btn" id="submitBtn">🚀 提交 Issue</button>
+        <div id="statusMessage" class="status"></div>
+    </div>
+
+    <div class="footer">
+        数据保存在 <strong>GitHub Issues</strong> · 仅供本人使用
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- 配置 ----------
+        const REPO = '你的用户名/你的仓库名';  // 请替换，例如 'zhangsan/health-cert'
+        const TOKEN_KEY = 'github_issue_upload_token';
+
+        // DOM 引用
+        const tokenInput = document.getElementById('tokenInput');
+        const saveTokenBtn = document.getElementById('saveTokenBtn');
+        const tokenStatus = document.getElementById('tokenStatus');
+
+        const nameInput = document.getElementById('nameInput');
+        const idInput = document.getElementById('idInput');
+        const dateInput = document.getElementById('dateInput');
+        const avatarInput = document.getElementById('avatarInput');
+        const noteInput = document.getElementById('noteInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusDiv = document.getElementById('statusMessage');
+
+        // ---------- 存储 Token ----------
+        function loadToken() {
+            const saved = localStorage.getItem(TOKEN_KEY);
+            if (saved) {
+                tokenInput.value = saved;
+                tokenStatus.textContent = '✅ Token 已加载';
+                tokenStatus.style.color = '#166534';
+            } else {
+                tokenStatus.textContent = '⚠️ 请先输入 Token 并保存';
+                tokenStatus.style.color = '#b45309';
+            }
+        }
+
+        saveTokenBtn.addEventListener('click', function() {
+            const val = tokenInput.value.trim();
+            if (!val) {
+                tokenStatus.textContent = '❌ 请输入 Token';
+                tokenStatus.style.color = '#991b1b';
+                return;
+            }
+            localStorage.setItem(TOKEN_KEY, val);
+            tokenStatus.textContent = '✅ Token 已保存';
+            tokenStatus.style.color = '#166534';
+            // 验证一下有效性（可选）
+        });
+
+        // ---------- 提交 Issue ----------
+        async function createIssue(title, body) {
+            const token = localStorage.getItem(TOKEN_KEY);
+            if (!token) {
+                throw new Error('请先保存 Token');
+            }
+
+            const url = `https://api.github.com/repos/${REPO}/issues`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    body: body,
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(`GitHub API 错误 (${response.status}): ${errData.message || response.statusText}`);
+            }
+            return response.json();
+        }
+
+        submitBtn.addEventListener('click', async function() {
+            // 清空状态
+            statusDiv.className = 'status';
+            statusDiv.style.display = 'none';
+            submitBtn.disabled = true;
+
+            // 验证必填
+            const name = nameInput.value.trim();
+            const id = idInput.value.trim();
+            if (!name || !id) {
+                statusDiv.textContent = '⚠️ 姓名和健康证编号为必填';
+                statusDiv.className = 'status error';
+                statusDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const date = dateInput.value || '未指定';
+            const avatar = avatarInput.value.trim() || '（无头像）';
+            const note = noteInput.value.trim() || '';
+
+            // 组装 Issue 标题和正文（Markdown）
+            const title = `健康证 · ${name} (${id})`;
+            let body = `## 📋 健康证信息\n\n`;
+            body += `- **姓名**：${name}\n`;
+            body += `- **编号**：${id}\n`;
+            body += `- **有效日期**：${date}\n`;
+            if (avatar !== '（无头像）') {
+                body += `- **头像**：![头像](${avatar})\n`;
+            } else {
+                body += `- **头像**：无\n`;
+            }
+            if (note) {
+                body += `\n## 📝 备注\n${note}\n`;
+            }
+            body += `\n---\n*提交于 ${new Date().toLocaleString('zh-CN')}*`;
+
+            // 显示加载状态
+            statusDiv.textContent = '⏳ 正在提交，请稍候...';
+            statusDiv.className = 'status loading';
+            statusDiv.style.display = 'block';
+
+            try {
+                const result = await createIssue(title, body);
+                statusDiv.textContent = `✅ Issue 创建成功！编号 #${result.number}`;
+                statusDiv.className = 'status success';
+                statusDiv.style.display = 'block';
+                // 清空部分表单（保留 Token 和上次的姓名以便连续录入）
+                nameInput.value = '';
+                idInput.value = '';
+                dateInput.value = '';
+                avatarInput.value = '';
+                noteInput.value = '';
+                // 可选：跳转到 Issue 页面
+                // window.open(result.html_url, '_blank');
+            } catch (err) {
+                statusDiv.textContent = `❌ 提交失败：${err.message}`;
+                statusDiv.className = 'status error';
+                statusDiv.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        // 初始化
+        loadToken();
+        // 如果没有保存 Token，自动聚焦
+        if (!localStorage.getItem(TOKEN_KEY)) {
+            tokenInput.focus();
+        }
+    })();
+</script>
+</body>
+</html>
