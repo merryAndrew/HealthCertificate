@@ -27,7 +27,6 @@ def extract_first_image(text):
     match = re.search(r'(https?://[^\s]+\.(?:png|jpg|jpeg|gif|webp|svg))', text)
     if match:
         return match.group(1)
-    # 新增：从纯文本“头像图片：”后提取
     match = re.search(r'头像图片[：:]\s*(https?://[^\s]+)', text)
     if match:
         return match.group(1)
@@ -42,8 +41,7 @@ def build_card(issue, style='A'):
     for comment in comments:
         all_text += ' ' + comment.get('body', '')
 
-    # 提取字段（支持中文/英文冒号，同时去除可能附加的Markdown符号）
-    name = title  # 标题即为姓名
+    name = title
 
     gender_match = re.search(r'性别[：:]\s*(.+)', all_text)
     gender = gender_match.group(1).strip() if gender_match else '男'
@@ -57,13 +55,13 @@ def build_card(issue, style='A'):
     else:
         date_display = '未选择日期 (有效期一年)'
 
-    # 头像：优先从“头像图片：”后取，若无则用通用提取
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    page_url = f'https://{USER}.github.io/{REPO_NAME}/card.html?id={title}'
+    # 🔥 A版和B版的二维码都指向 index.html (B版)
+    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={title}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
