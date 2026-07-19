@@ -72,7 +72,7 @@ def build_card(issue, style='A'):
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    # 🔥 关键修改：生成带双引号的链接格式 ?id="标题"
+    # 关键修改：生成带双引号的链接 ?id="编码后的标题"
     encoded_title = urllib.parse.quote(title)
     page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id="{encoded_title}"'
     qr = qrcode.make(page_url)
@@ -209,6 +209,41 @@ for issue in issues:
 cards_A.reverse()
 cards_B.reverse()
 
+# 自定义标题栏的 HTML 代码（用于 A 和 B 版）
+header_html = '''
+<div id="custom-header" style="display: none; position: sticky; top: 0; z-index: 1000; background: #ffffff; padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-bottom: 1px solid #f0f2f5; align-items: center; gap: 12px; font-size: 18px; font-weight: 600; color: #1a2332;">
+    <span style="cursor: pointer; font-size: 20px; line-height: 1;" onclick="history.back();">‹</span>
+    <span id="header-title">健康证查询</span>
+</div>
+<script>
+    (function() {
+        // 检测是否在微信、QQ等内置浏览器中（这些环境通常自带标题栏）
+        var ua = navigator.userAgent.toLowerCase();
+        var isWechat = ua.indexOf('micromessenger') !== -1;
+        var isQQ = ua.indexOf('qq/') !== -1;
+        var isBrowser = !isWechat && !isQQ;
+        // 如果是在普通浏览器中，显示自定义标题栏
+        if (isBrowser) {
+            var header = document.getElementById('custom-header');
+            if (header) {
+                header.style.display = 'flex';
+            }
+        }
+        // 设置标题文字（根据不同页面）
+        var titleEl = document.getElementById('header-title');
+        if (titleEl) {
+            var pageTitle = document.title;
+            if (pageTitle.includes('证件查询')) {
+                titleEl.textContent = '健康证服务-证件查询';
+            } else {
+                titleEl.textContent = '健康证查询';
+            }
+        }
+    })();
+</script>
+'''
+
+# A 版（card.html）模板
 html_A = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -249,6 +284,7 @@ html_A = f'''<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {header_html}
     <div class="app-wrapper">
         {''.join(cards_A)}
     </div>
@@ -280,6 +316,7 @@ html_A = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
+# B 版（index.html）模板
 html_B = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -314,13 +351,13 @@ html_B = f'''<!DOCTYPE html>
     </style>
 </head>
 <body>
+    {header_html}
     {''.join(cards_B)}
     <script>
         (function() {{
             const params = new URLSearchParams(window.location.search);
             let id = params.get('id');
             if (id) {{
-                // 去掉可能存在的首尾双引号
                 id = id.replace(/^"|"$/g, '');
                 const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
