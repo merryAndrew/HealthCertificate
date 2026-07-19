@@ -18,7 +18,6 @@ issues = requests.get(url, headers=headers).json()
 print(f"📡 获取到 {len(issues)} 个 Issue")
 
 def extract_first_image(text):
-    """从文本中提取第一张图片 URL"""
     match = re.search(r'!\[.*?\]\((https?://[^\s]+)\)', text)
     if match:
         return match.group(1)
@@ -26,6 +25,10 @@ def extract_first_image(text):
     if match:
         return match.group(1)
     match = re.search(r'(https?://[^\s]+\.(?:png|jpg|jpeg|gif|webp|svg))', text)
+    if match:
+        return match.group(1)
+    # 新增：从纯文本“头像图片：”后提取
+    match = re.search(r'头像图片[：:]\s*(https?://[^\s]+)', text)
     if match:
         return match.group(1)
     return None
@@ -39,7 +42,7 @@ def build_card(issue, style='A'):
     for comment in comments:
         all_text += ' ' + comment.get('body', '')
 
-    # ----- 字段提取（支持中文和英文冒号） -----
+    # 提取字段（支持中文/英文冒号，同时去除可能附加的Markdown符号）
     name = title  # 标题即为姓名
 
     gender_match = re.search(r'性别[：:]\s*(.+)', all_text)
@@ -54,19 +57,18 @@ def build_card(issue, style='A'):
     else:
         date_display = '未选择日期 (有效期一年)'
 
+    # 头像：优先从“头像图片：”后取，若无则用通用提取
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    # 二维码（链接到 card.html 并带上标题参数）
     page_url = f'https://{USER}.github.io/{REPO_NAME}/card.html?id={title}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-    # ----- 样式 A（带印章，供 card.html 使用） -----
     if style == 'A':
         return f'''
         <div class="cert-wrapper" data-title="{title}">
@@ -130,7 +132,6 @@ def build_card(issue, style='A'):
             </div>
         </div>
         '''
-    # ----- 样式 B（简洁，供 index.html 使用） -----
     else:
         return f'''
         <div class="cert-wrapper" data-title="{title}">
@@ -186,7 +187,6 @@ def build_card(issue, style='A'):
         </div>
         '''
 
-# ---- 生成所有卡片 ----
 cards_A = []
 cards_B = []
 for issue in issues:
@@ -198,7 +198,6 @@ for issue in issues:
 cards_A.reverse()
 cards_B.reverse()
 
-# ===== 样式 A（card.html） =====
 html_A = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -207,7 +206,6 @@ html_A = f'''<!DOCTYPE html>
     <title>健康证服务-证件查询</title>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 与您原有样式保持一致，此处略，但保留全部 */
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e0d6c7; padding: 10px; min-height: 100vh; }}
         .app-wrapper {{ max-width: 450px; margin: 0 auto; }}
@@ -268,7 +266,6 @@ html_A = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ===== 样式 B（index.html） =====
 html_B = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -329,14 +326,12 @@ html_B = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
-# ===== 写入文件 =====
 os.makedirs('dist', exist_ok=True)
 with open('dist/index.html', 'w', encoding='utf-8') as f:
     f.write(html_B)
 with open('dist/card.html', 'w', encoding='utf-8') as f:
     f.write(html_A)
 
-# 复制 upload.html 到 dist
 if os.path.exists('upload.html'):
     shutil.copy('upload.html', 'dist/upload.html')
     print("✅ 已复制 upload.html 到发布目录")
