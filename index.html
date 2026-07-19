@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 0; }
-        .cert-wrapper { max-width: 450px; margin: 0 auto 20px auto; padding: 0 10px; }
+        body { font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }
+        .cert-wrapper { max-width: 450px; margin: 0 auto 20px auto; }
         .cert-module { background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }
         .top-card { font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }
         .top-title { text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }
@@ -33,42 +33,6 @@
 </head>
 <body>
     
-<div id="custom-header" style="display: none; position: sticky; top: 0; z-index: 1000; background: #ffffff; padding: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-bottom: 1px solid #f0f2f5; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; color: #1a2332; width: 100%;">
-    <span id="header-back" style="position: absolute; left: 16px; cursor: pointer; font-size: 22px; line-height: 1; color: #1a2332;">‹</span>
-    <span id="header-title">健康证查询</span>
-</div>
-<script>
-    (function() {
-        var ua = navigator.userAgent.toLowerCase();
-        var isWechat = ua.indexOf('micromessenger') !== -1;
-        var isQQ = ua.indexOf('qq/') !== -1;
-        var isBrowser = !isWechat && !isQQ;
-        if (isBrowser) {
-            var header = document.getElementById('custom-header');
-            if (header) {
-                header.style.display = 'flex';
-            }
-        }
-        var titleEl = document.getElementById('header-title');
-        if (titleEl) {
-            var pageTitle = document.title;
-            if (pageTitle.includes('证件查询')) {
-                titleEl.textContent = '健康证服务-证件查询';
-            } else {
-                titleEl.textContent = '健康证查询';
-            }
-        }
-        var backBtn = document.getElementById('header-back');
-        if (backBtn) {
-            backBtn.addEventListener('click', function() {
-                history.back();
-            });
-        }
-    })();
-</script>
-
-    <div style="padding-top: 0;">
-        
         <div class="cert-wrapper" data-title="潘启杰">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
@@ -114,7 +78,7 @@
             <div class="bottom-card">
                 <div class="qrcode-area">
                     <div class="qrcode-img">
-                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADnklEQVR4nO2czY3bShCEqx8J+DgEFIBCoTJ4ITmmzYAM5QVggHNcYIjyoeePtOGDnwRLcvVBK3H1gSLQqK6eadKI34v1n98EAZEiRYoUKVKkyOcjLccIu2G39oJ1ArBOgN1i+dbtD/9akc9Fjv5nXgAgXvwTEScAGIj5PwPzsSEBAOz/nlPke5Kx6kv8QlcfRDOs1wQAuyeOmY33O6fI9yDH02euEwzAkLBeCUMYvPu3+eNe5xT53qR9ZQLmbTcAu3Hxw8OPy0jP8GtFPgNZdCgQQAS42kBbpyFh3kDL9md0K9Rn0mtdp8iHk6uZmU2Afd0AzBtgtzgC8zYQ8wYA2L0t+/O/VuRTka5DTV8IJAAhAev1M+eLvwvHevZa1ynycSRIkpiZDkdDQlYffzcQCMyKNJPk8lrXKfJxZNGhOPkikSFswPrvQJQFIRqwG4H9IFqvdZ0iH06u00AucYSvCvmxVssmwG7IYmS3+5xT5JuQtS/7ZvS69XFJAPaRiF8IxEvKwhMncLVKvtZ1inwc6X6I3AByG8glJMC3OVhM0cxshYp5kh8S2cJ1KC9Ch08j4gjMy25AvBDrNY15+yzQ3ZL8kMhjuLQgkMjqk9s0kq0lS+BSF6ulQyL7KH4oGoDwzeCaEy80YCDWawJRm7P1pr5M5Dk6HXLNAcAlkOUlLzm6W+IG6ZDIU2SbvAFAyZycUkyeTa20ccGQTbhySGSJ1pd55+W2J6T637L10f4rHRJ5iFbLDia65hWrNmFgkSXlkMguuhxakJXGXVCrYNzq1wNVy0SeovNDs2dTnzmeV6xiNG/yQyLP0fkhr1bumlPnjJopUi0T+ZMotSwXr3zM+/jB61sWKA95apHnyDl0kKDW6nu+1GzKRU45JLKPkw5lT90KWqi9fde/KYdEdlF0qPhnT58NQLubwx231qlF/jxKX9acNMqwB/OaUf5KrWrSIZGHKAmSp4a6IaK5LTl295cph0Seg8fI2xx12GPuUqofRFMOiSyRZ9DypyFh/hhBYEce9rh+GoGBhnhJPojmD3h4resU+XByPiw0YrWxM9vwZzbUfdjlPucU+SbkYa+jziz6NkdoJa7cfeYeSbVMZB8/5FBZH+pniuqa0RK0xijyHKcc6pr5Or1YNs10n6vIX5EuN/C7FduNinYLn9aGZPPDre50TpFvRR6f+2G3UC12zFP7ZtNuZRrtLucU+Sak6RnnIkWKFClSpMi/nPwO5fRFzXQHx0AAAAAASUVORK5CYII=" alt="防伪二维码">
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADnUlEQVR4nO2cTY6jSBCFXzRIXoLUB+ijpG8wRyr1keoGcJQ6QEuwtAR6s4jIH1xVm+rx2C69WGAb/AmQniLjJzON+JrNP74IAiJFihQpUqRIkY9HWljv3zDnEwB2Mxt3A9Z88nznpxX5kGQiSS4AyQ3AsPk5O689AHQE0JEkeSTv8bQiH4qEyyItANLSkVPWiwsJw+a6Ipd8IZHk9FzvKfL/I+1l2Q2JFyPfepALYGYn2vlm9xT5zcj5F8nfdiIwkJhHgOTFbnlPkU9N9vE5EMAKAKuBibsR6whiPdHS1BFYgbYg+VzvKfLmpCdiIzwosvN6op3R0V4WAFh72Bl7ydXu/LQiH4p0P9T4l/nXxYgV4Dx2IJB/Hr3Qs72nyNuROS8ryVnk8fBwmhMi3+cEwGMk5WUiD5ZLPh05DRs4DSQnl0oUifyPLjNuTkhDIouFIgaSXDovNKIUFZGWqBTlq1FolIZEFmtqjMjeh5O7JdJHsPA+G3IpWxoS2Vi4lSV8TiOayevUVVcRHikeEnm0gx8qobNbx+p9IjIaqLFM5JWFIoAYwUoOFr6pDmPcgNJ4lYZEHkk7e5P1YpjtxDg3bIjyotcYAaQF8e0p31PkLcjodaTX0ZDeTrREAIl7D2DvgYEwDARmi7rjHZ9W5COSJR46TA5KzfiGtrwYU0E0lolsrCqnJu4RXRe9NDG14iGR7yznWZtn9IjKIhBz0FDFtXk8JA2JPFqtD+UidFSFWgdVhjbVqUW+tzpaZU+TheQlx9xDq3OspSGRR8sBUClWZ5/j56Yhj2B+TvGQyHfWxEPuaXLDoyk5Xl2VhkQe7OCHIn6ubimSswXFGUlDIq+taiiGsaH+zGlaCYXULxP5gTUx9ZT1kuegMa80A9BOIpKGRLZ2VR+KEQzlkGNqNPPSpCGRjXm/zDAsxGwdMf9z8VX2wPDHUFcPAbt5X+1+TyvyEcnih3JRscw3y1cP84dUHxL5CVn3/cA8Iroeaenoe4H4zJC1/4C8x9OKfEgyXQXWZToR0PmCaU/OZu0dI/Izcg1t2Mtb9kgRP+ca41yXuP5H9xT5Pcj+6jeBrSfWn/D19vP4p0d6/ektfM7nbrO/vafI70V+vP9QaZBF/Ay0bQ7F1CJbe7/vB3Z3NOaHYYEl7j2xApZex7zs/rneU+TtyGYeI0oAlOe9tl2Pqyxffkhktut9P1j3bGgPNVcrf32u9xQpUqRIkSJFivzM/gVKx5j9kvnylQAAAABJRU5ErkJggg==" alt="防伪二维码">
                     </div>
                     <div class="qrcode-title">此健康信息已上报平台</div>
                 </div>
@@ -166,25 +130,23 @@
             <div class="bottom-card">
                 <div class="qrcode-area">
                     <div class="qrcode-img">
-                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADiklEQVR4nO2cTW7jOBCFXw0FeEkBOUCOIt2gjxT0keYG0lFygADU0gCFN4siRclONu42EnveWyiWww+0gEL9kEUZcZvmf24EAZEiRYoUKVKkyJ9HWlEHzNbUwUYftpqNS/16/OZfK/JnkZ3/GSYAWF5giAkA1g7AapwtZAMAYgkZAGB/OqfI5ySX4l84LWYAAjEkwN54NjIFL9/cVf2tOUU+KTkwA8DqhsRpaQHtbnOKfCrSxuVEMzsRiGcPW/z9Wj7dZ06Rj02CJImBJJkCOUWSU8wAYna3RCbA/9sGT4/1nCLvRxYbKgrEkL681FGyIZEH8UITgOaHyi1CdVVt3GM9p8j7kTWWVXfjcWtCoF/IFtXIEtpkQyL3arHMvU9xN9lvq1si4WVaVD4k8kK+3MP5V4KVu7UDYiKGtPoYA7pch2wF2mM9p8j7kYdYRm6eZvNDkWyxzB2UYpnIg2omHUo6TWa4SSFmANh/2oU72ZDIqn2p1UzFLafkPn7BlmLLhkTuVba/5hHA8N6BvvEKgFi6zNlCBpaXzHlcjVj67/y1In8iWWNZq7ficZHoMK65JfkhkVW19yMBwPKS620PG95PNCBkQ0wwIGTOffrOXyvyJ5JbPpRRLmlLrFvuE1lXIOWHRF5pF8s8a/YqvxVnx5w6QTm1yAvta/uaCgFbXYYtKdJeh8gvVMNTrlurae9uysZr81JtIeCxnlPk/chdLPOF6dL3GmoEi7UzZEiHLTXZkMgq90MevOoq4n6NMTXvUzJu2ZDIow5+aOtG21oYJ2C/czYolom8UjGJhOpkWifRVu9PqL2wU5QNibxUrcsAoBkIqvdxyzlEOsUykZ+Q9saMcg5oMSuZ9HKijVjNxpiBIa2m82Uir1V70PoPGOKHEaC3mnlqNPchGxYD5x4A4kc1osd6TpH3Iz85G1Ty59qYz/0birTGKPJaPMqXgchtiToem4i0PiTyUh6ZapN0yJxfCcy/EjD8eyrN+t5jve3q/+mcIp+SHGqB76nzCIC/e8BGAPXodP6MvH1OkU9G1vd+2Lh0vlJkb2k1eCYN+IuJ/u6cIp+T5BQzbMRqmPtA8r0DybOVfpD3E78gb59T5HORuxWggWfD/Ho2sz4Qcx+I+TV/Rd4+p8jHJq9q+7Zv34b4bn2CanuRn6nu2wM4dp61o0IXZxRV24s8yPSOc5EiRYoUKVLk/5z8DxPBltPa9G9NAAAAAElFTkSuQmCC" alt="防伪二维码">
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADtUlEQVR4nO2cS46rSBBFTzRIHmKpFuClJDvoJb2twVK8gJJgaAl0exCZkPhVT57Kbbs6YmDZVB2RSKGb8UtM/JmNf/0hCEEGGWSQQQYZZJCvR1q2FrMzmJ1XYzwDo7VYP7fAXP6rf/Jqg3xJMkmSJiBdzTTQCOYW0gTQLQCNJElH8hmrDfKlSNwt0gSkqZGkBWn/pgXoJGlqBDRyhxve6zmD/O9Is3MjxsvN/Btzi4a5feQ9g/xZpAZWs19TI9LVDDrJ+u5WoqBH3DPI9yaLwHQCZiBNKxrPn63GM1gaQMwnGUBdkHyv5wzy4eRoZp6S9fNJ9ut6kosRc4v1/k+rp2XPX22QL0W6DlX6Ml5upvHcULKx1QQ3y1L1HfcM8meRVV6mAUpK5h/7NXLWNnQLkZcFebBDPNR9tox9g9HdTNAsBmBp0HZtE633es4gH0e6DlVKI5ebrZTYSV5yTFOjXCkKHQqytlx6Lr5RXUu+yWWXyh+lWB0+FORmxYcW3EGyvyz4h9epaTYxIuKhIO/soENL1fBwv6oaZODXwoeCPFqJb7LcsLVWK5fa9jLP32IvC/ILcrQWkm6mAbB+NgMaMV4WctdjNis1oyevNsiXIrf4ecllIBcjj4f2yGjLxggdCvJL0jvz4yV7E8wnZeEBrGc1l6r88zvuGeRPId0vjE5YuhowfyykAUjTx2Lp2iLK7IfRfZaq5Hs9Z5CPI6vBIHkJegaYz+TYxwvYwpJW0/h31KmDvLe9nljqQwu+oXkPrcvJ2Z7WR24f5NGqXkdVJNqrQt0WbG/F6oipg/ydtB4ghz1lAlZTLkxb3ymH2D6i/y33DPKnkIdehzc8qOY8suZ0pX22EaFDQW5W9rJDZ34AD4o8HqLL3dfSCQkfCrKyg9IslUtVNcbcCYHolwX5hZX6c1MCa6i7ZNtgUUndYi8L8t6q3N6/+VFE6rEPTb/NGYUPBXkk/VRZPrSxmoZOyqfsySfv/a/p2h7JZ6w2yNciN5fI6mN5itoQLLkTkrS2pAHKePWzVhvk65L7ez+gu5Uy0Hwqs7Degi2y9OzVBvlaZNYhl5b5w39pvCwtY49pvCx+pKO0z5bouQZ5ZyWS5piNNdp7Y3ucvc/HRkwd5L+R9utqxni5+ZalgXX72Yh0Pcn6b75nkO9N3utQqSJuxzw4aNM+bR06FGS2+/d+CPB3fJCmsylpNeiAscdq8r2eM8jHkcfTP412CTqcWzy8Ri96HUHWZvGO8yCDDDLIIIMM8n9O/gNiTj9CAChliQAAAABJRU5ErkJggg==" alt="防伪二维码">
                     </div>
                     <div class="qrcode-title">此健康信息已上报平台</div>
                 </div>
             </div>
         </div>
         
-    </div>
     <script>
         (function() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             if (id) {
-                const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
                 let found = false;
                 wrappers.forEach(w => {
                     const title = w.getAttribute('data-title');
-                    if (title === decodedId) {
+                    if (title === id) {
                         w.style.display = 'block';
                         found = true;
                     } else {
