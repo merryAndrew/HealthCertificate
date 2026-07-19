@@ -5,6 +5,7 @@ import qrcode
 from io import BytesIO
 import base64
 import shutil
+import urllib.parse  # ← 新增导入
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
@@ -71,7 +72,9 @@ def build_card(issue, style='A'):
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={title}'
+    # 🔥 关键修复：对标题进行URL编码，避免特殊字符截断
+    encoded_title = urllib.parse.quote(title)
+    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
