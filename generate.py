@@ -32,6 +32,19 @@ def extract_first_image(text):
         return match.group(1)
     return None
 
+def format_date(raw_date):
+    """将 YYYY-MM-DD 转换为 YYYY年M月D日 (有效期一年)"""
+    if not raw_date:
+        return '未选择日期 (有效期一年)'
+    raw_date = raw_date.strip()
+    # 尝试匹配 YYYY-MM-DD
+    match = re.match(r'^(\d{4})-(\d{1,2})-(\d{1,2})$', raw_date)
+    if match:
+        year, month, day = match.groups()
+        return f'{year}年{int(month)}月{int(day)}日 (有效期一年)'
+    # 如果已经是其他格式，直接返回
+    return raw_date
+
 def build_card(issue, style='A'):
     title = issue['title']
     body = issue['body'] or ''
@@ -51,7 +64,8 @@ def build_card(issue, style='A'):
 
     date_match = re.search(r'体检日期[：:]\s*(.+)', all_text)
     if date_match:
-        date_display = date_match.group(1).strip()
+        raw_date = date_match.group(1).strip()
+        date_display = format_date(raw_date)
     else:
         date_display = '未选择日期 (有效期一年)'
 
@@ -60,7 +74,7 @@ def build_card(issue, style='A'):
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    # 🔥 A版和B版的二维码都指向 index.html (B版)
+    # 二维码统一指向 index.html (B版)
     page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={title}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
