@@ -4,6 +4,7 @@ import re
 import qrcode
 from io import BytesIO
 import base64
+import shutil  # ← 新增导入
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
@@ -42,12 +43,6 @@ def build_card(issue, style='A'):
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
-    
-    # ===== 头像国内镜像加速（仅当来自 raw.githubusercontent.com） =====
-    if img_url and 'raw.githubusercontent.com' in img_url:
-        img_url = img_url.replace('https://raw.githubusercontent.com/', 'https://mirror.ghproxy.com/raw.githubusercontent.com/')
-    # ==================================================================
-
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
     name = title.split('_')[0] if '_' in title else title
@@ -58,10 +53,6 @@ def build_card(issue, style='A'):
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
-
-    # ===== 印章使用原始地址（不走镜像） =====
-    seal_url = 'https://raw.githubusercontent.com/merryAndrew/imge/main/than.png'
-    # ======================================
 
     if style == 'A':
         return f'''
@@ -99,7 +90,7 @@ def build_card(issue, style='A'):
                     </div>
                     <div class="photo">
                         <div class="seal-container">
-                            <img class="seal-img" src="{seal_url}" alt="印章图片">
+                            <img class="seal-img" src="https://raw.githubusercontent.com/merryAndrew/imge/main/than.png" alt="印章图片">
                         </div>
                         <img src="{img_url}" alt="持证人照片">
                     </div>
@@ -199,7 +190,7 @@ html_A = f'''<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>健康证服务-证件查询</title>
-    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e0d6c7; padding: 10px; min-height: 100vh; }}
@@ -268,7 +259,7 @@ html_B = f'''<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>健康证查询</title>
-    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }}
@@ -288,7 +279,7 @@ html_B = f'''<!DOCTYPE html>
         .photo img {{ width: 100%; height: 100%; object-fit: cover; }}
         .middle-card {{ display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; color: #333; text-align: center; width: 100%; height: 180px; font-weight: bold; }}
         .middle-line {{ margin: 5px 0; }}
-        .bottom-card {{ border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 11px; text-align: center; background: #f8f8f8; box-shadow: 0 8px 16px rgba(0,0,0,0.35); }}
+        .bottom-card {{ border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 11px; text-align: center; background: #f8f8c; box-shadow: 0 8px 16px rgba(0,0,0,0.35); }}
         .qrcode-area {{ text-align: center; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }}
         .qrcode-img {{ width: 120px; height: 120px; margin: 0 auto 10px; }}
         .qrcode-img img {{ width: 100%; height: 100%; object-fit: contain; }}
@@ -328,4 +319,11 @@ with open('dist/index.html', 'w', encoding='utf-8') as f:
 with open('dist/card.html', 'w', encoding='utf-8') as f:
     f.write(html_A)
 
-print("✅ 生成成功！已生成 index.html (B样式) 和 card.html (A样式，标题已改为「健康证服务-证件查询」)")
+# ========== 新增：复制 upload.html 到 dist ==========
+if os.path.exists('upload.html'):
+    shutil.copy('upload.html', 'dist/upload.html')
+    print("✅ 已复制 upload.html 到发布目录")
+else:
+    print("⚠️ 未找到 upload.html，请确保该文件与 generate.py 在同一目录")
+
+print("✅ 生成成功！已生成 index.html (B样式)、card.html (A样式) 和 upload.html（若存在）")
