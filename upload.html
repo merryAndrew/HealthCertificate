@@ -18,6 +18,7 @@
         }
         .header {
             padding: 8px 0 4px;
+            text-align: center; /* 新增居中 */
         }
         .header h1 {
             font-size: 22px;
@@ -31,7 +32,6 @@
             margin-top: 2px;
         }
 
-        /* 卡片分区 */
         .section {
             background: #ffffff;
             border-radius: 16px;
@@ -54,7 +54,6 @@
             margin-left: 8px;
         }
 
-        /* 表单元素 */
         .field {
             margin-bottom: 14px;
         }
@@ -107,7 +106,6 @@
             text-decoration: none;
         }
 
-        /* 头像上传区域 */
         .avatar-zone {
             display: flex;
             align-items: center;
@@ -184,7 +182,6 @@
             box-shadow: 0 0 0 3px rgba(43, 110, 240, 0.10);
         }
 
-        /* 按钮 */
         .btn-primary {
             width: 100%;
             padding: 14px;
@@ -208,7 +205,7 @@
         }
 
         .btn-save {
-            padding: 10px 20px;
+            padding: 8px 16px;
             font-size: 14px;
             font-weight: 500;
             background: #eef2f7;
@@ -217,6 +214,7 @@
             border-radius: 20px;
             cursor: pointer;
             transition: background 0.2s;
+            white-space: nowrap;
         }
         .btn-save:active {
             background: #dce0e6;
@@ -239,19 +237,20 @@
             transform: scale(0.98);
         }
 
-        /* 状态 */
         .status {
             margin-top: 12px;
             padding: 10px 14px;
             border-radius: 10px;
             font-size: 14px;
             display: none;
+            text-align: center;
         }
         .status.success {
             display: block;
-            background: #e6f7ed;
             color: #0d6832;
-            border: 1px solid #b8e6cf;
+            background: transparent;
+            border: none;
+            padding: 10px 0;
         }
         .status.error {
             display: block;
@@ -267,18 +266,27 @@
         }
 
         .settings-status {
+            display: inline-block;
+            padding: 6px 14px;
             font-size: 13px;
-            color: #6b7a8f;
-            margin-top: 8px;
+            font-weight: 500;
+            border-radius: 20px;
+            background: #e8ecf2;
+            color: #4a5a6e;
+            white-space: nowrap;
+            cursor: default;
+            user-select: none;
+            transition: background 0.2s;
         }
         .settings-status.ok {
+            background: #d4edda;
             color: #0d6832;
         }
         .settings-status.warn {
-            color: #b36b1e;
+            background: #fff3cd;
+            color: #856404;
         }
 
-        /* 加载动画 */
         .loader {
             display: none;
             flex-direction: column;
@@ -325,7 +333,6 @@
             padding-bottom: 10px;
         }
 
-        /* 两列设置 */
         .settings-grid {
             display: flex;
             flex-direction: column;
@@ -341,17 +348,19 @@
             margin-top: 4px;
             flex-wrap: wrap;
         }
+        .settings-actions .spacer {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
 <div class="app">
-    <!-- 头部 -->
+    <!-- 头部居中 -->
     <div class="header">
         <h1>📋 健康证 · 快速提交</h1>
         <p>填写完整信息，自动创建 Issue</p>
     </div>
 
-    <!-- 系统配置 -->
     <div class="section">
         <div class="section-title">⚙️ 系统配置 <span class="badge">仅保存在本机</span></div>
         <div class="settings-grid">
@@ -370,12 +379,12 @@
             </div>
         </div>
         <div class="settings-actions">
-            <button class="btn-save" id="saveSettingsBtn">💾 保存设置</button>
+            <button class="btn-save" id="saveSettingsBtn">保存设置</button>
+            <button class="btn-save" id="clearSettingsBtn" style="display:none;">移除密钥</button>
             <span class="settings-status" id="settingsStatus">请填写完整信息</span>
         </div>
     </div>
 
-    <!-- 基础信息 -->
     <div class="section">
         <div class="section-title">📝 基础信息</div>
 
@@ -424,14 +433,12 @@
 
         <button class="btn-primary" id="submitBtn">🚀 提交 Issue</button>
 
-        <!-- 加载 -->
         <div class="loader" id="loaderContainer">
             <div class="spinner"></div>
             <div class="loader-text">⏳ 正在生成健康证明...</div>
             <div class="loader-sub" id="pollStatus">正在等待部署完成，请稍候...</div>
         </div>
 
-        <!-- 查看结果 -->
         <div class="view-area" id="viewResultArea">
             <button class="btn-view" id="viewResultBtn">✅ 查看我的健康证</button>
         </div>
@@ -440,7 +447,7 @@
     </div>
 
     <div class="footer-note">
-        数据仅保存在本地，不会上传服务器 · 基于 GitHub Issues 自动化生成
+        数据基于 GitHub Issues 自动化生成
     </div>
 </div>
 
@@ -454,6 +461,7 @@
         const tokenInput = document.getElementById('tokenInput');
         const imgbbKeyInput = document.getElementById('imgbbKeyInput');
         const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const clearSettingsBtn = document.getElementById('clearSettingsBtn');
         const settingsStatus = document.getElementById('settingsStatus');
         const nameInput = document.getElementById('nameInput');
         const genderInput = document.getElementById('genderInput');
@@ -480,6 +488,18 @@
         let pollCount = 0;
         const MAX_POLLS = 24;
 
+        function hasStoredData() {
+            return localStorage.getItem(REPO_KEY) || localStorage.getItem(TOKEN_KEY) || localStorage.getItem(IMGBB_KEY);
+        }
+
+        function updateClearButtonVisibility() {
+            if (hasStoredData()) {
+                clearSettingsBtn.style.display = 'inline-block';
+            } else {
+                clearSettingsBtn.style.display = 'none';
+            }
+        }
+
         function loadSettings() {
             const repo = localStorage.getItem(REPO_KEY) || '';
             const token = localStorage.getItem(TOKEN_KEY) || '';
@@ -488,6 +508,7 @@
             tokenInput.value = token;
             imgbbKeyInput.value = imgbb;
             updateSettingsStatus();
+            updateClearButtonVisibility();
         }
 
         function updateSettingsStatus() {
@@ -496,7 +517,7 @@
             const imgbb = localStorage.getItem(IMGBB_KEY);
             const el = settingsStatus;
             if (repo && token && imgbb) {
-                el.textContent = '✅ 已配置完成';
+                el.textContent = '配置完成';
                 el.className = 'settings-status ok';
             } else {
                 el.textContent = '⚠️ 请完整填写并保存';
@@ -519,9 +540,22 @@
             settingsStatus.textContent = '✅ 配置已保存';
             settingsStatus.className = 'settings-status ok';
             updateSettingsStatus();
+            updateClearButtonVisibility();
         });
 
-        // 上传头像
+        clearSettingsBtn.addEventListener('click', function() {
+            localStorage.removeItem(REPO_KEY);
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(IMGBB_KEY);
+            repoInput.value = '';
+            tokenInput.value = '';
+            imgbbKeyInput.value = '';
+            settingsStatus.textContent = '🗑️ 已清除所有配置';
+            settingsStatus.className = 'settings-status warn';
+            updateSettingsStatus();
+            updateClearButtonVisibility();
+        });
+
         uploadAvatarBtn.addEventListener('click', async function() {
             const file = avatarFile.files[0];
             if (!file) {
@@ -569,7 +603,6 @@
             }
         });
 
-        // 创建 Issue
         async function createIssue(repo, token, title, body) {
             const url = `https://api.github.com/repos/${repo}/issues`;
             const response = await fetch(url, {
@@ -588,7 +621,6 @@
             return response.json();
         }
 
-        // 轮询
         function startPolling(title) {
             pollCount = 0;
             if (pollTimer) clearInterval(pollTimer);
@@ -633,7 +665,6 @@
             }, 5000);
         }
 
-        // 提交
         submitBtn.addEventListener('click', async function() {
             statusDiv.className = 'status';
             statusDiv.style.display = 'none';
