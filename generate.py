@@ -5,7 +5,7 @@ import qrcode
 from io import BytesIO
 import base64
 import shutil
-import urllib.parse  # ← 新增导入
+import urllib.parse
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
@@ -72,7 +72,6 @@ def build_card(issue, style='A'):
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    # 🔥 关键修复：对标题进行URL编码，避免特殊字符截断
     encoded_title = urllib.parse.quote(title)
     page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
     qr = qrcode.make(page_url)
@@ -220,7 +219,7 @@ html_A = f'''<!DOCTYPE html>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e0d6c7; padding: 10px; min-height: 100vh; }}
         .app-wrapper {{ max-width: 350px; margin: 0 auto; }}
-        .photo .seal-container {{ position: absolute !important; top: 44px !important; left: -47px !important; z-index: 999 !important; }}
+        .photo .seal-container {{ position: absolute !important; bottom: -17px !important; left: -47px !important; z-index: 999 !important; }}
         .photo .seal-img {{ width: 63px !important; height: 63px !important; object-fit: contain !important; opacity: 1 !important; display: block !important; }}
         .cert-module {{ background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; height: 180px; }}
         .top-card {{ font-size: 11px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }}
