@@ -154,24 +154,13 @@
             line-height: 1.6;
             white-space: nowrap;
             text-align: center;
+            user-select: none;
         }
         .avatar-zone .file-btn:active {
             background: #dce0e6;
         }
         .avatar-zone .file-input-wrap {
-            flex: 0 0 auto;
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-        }
-        .avatar-zone .file-input-wrap input[type="file"] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
+            display: none; /* 完全隐藏原生 input */
         }
         .avatar-zone .file-name {
             font-size: 12px;
@@ -435,12 +424,12 @@
             <div class="field">
                 <label>Imgbb API Key</label>
                 <input type="password" id="imgbbKeyInput" placeholder="获取：api.imgbb.com">
-                <div class="hint"><a href="https://api.imgbb.com/" target="_blank">点此获取 Imgbb API Key</a></div>
+                <div class="hint"><a href="https://api.imgbb.com/" target="_blank">点此获取免费 Imgbb API Key</a></div>
             </div>
         </div>
         <div class="settings-actions">
-            <button class="btn-save" id="saveSettingsBtn">保存设置</button>
-            <button class="btn-save" id="clearSettingsBtn" style="display:none;">移除密钥</button>
+            <button class="btn-save" id="saveSettingsBtn">💾 保存设置</button>
+            <button class="btn-save" id="clearSettingsBtn" style="display:none;">🗑️ 移除密钥</button>
             <span class="settings-status" id="settingsStatus">请填写完整信息</span>
         </div>
     </div>
@@ -475,13 +464,11 @@
             <label>头像照片</label>
             <div class="avatar-zone">
                 <!-- 自定义文件选择 -->
-                <span class="file-btn">选择文件</span>
-                <span class="file-input-wrap">
-                    <input type="file" id="avatarFile" accept="image/*">
-                </span>
+                <span class="file-btn" id="fileSelectBtn">选择文件</span>
+                <input type="file" id="avatarFile" accept="image/*" style="display:none;">
                 <span class="file-name" id="fileName">未选择</span>
                 <button class="upload-btn" id="uploadAvatarBtn">上传并获取链接</button>
-             <!--   <span class="upload-status" id="uploadStatus">支持JPG/PNG</span> -->
+                <span class="upload-status" id="uploadStatus">支持JPG/PNG</span>
             </div>
             <div class="avatar-preview-wrap">
                 <img id="avatarPreview" alt="头像预览">
@@ -526,6 +513,7 @@
         const idNumberInput = document.getElementById('idNumberInput');
         const dateInput = document.getElementById('dateInput');
         const avatarFile = document.getElementById('avatarFile');
+        const fileSelectBtn = document.getElementById('fileSelectBtn');
         const fileName = document.getElementById('fileName');
         const uploadAvatarBtn = document.getElementById('uploadAvatarBtn');
         const uploadStatus = document.getElementById('uploadStatus');
@@ -545,6 +533,11 @@
         let pollTimer = null;
         let pollCount = 0;
         const MAX_POLLS = 24;
+
+        // 点击“选择文件”按钮触发文件选择框
+        fileSelectBtn.addEventListener('click', function() {
+            avatarFile.click();
+        });
 
         // 显示选中的文件名
         avatarFile.addEventListener('change', function() {
@@ -584,7 +577,7 @@
             const imgbb = localStorage.getItem(IMGBB_KEY);
             const el = settingsStatus;
             if (repo && token && imgbb) {
-                el.textContent = '配置完成';
+                el.textContent = '✅ 完成配置';
                 el.className = 'settings-status ok';
             } else {
                 el.textContent = '⚠️ 请完整填写并保存';
