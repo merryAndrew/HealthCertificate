@@ -4,11 +4,12 @@ import re
 import qrcode
 from io import BytesIO
 import base64
-import shutil  # ← 新增导入
+import shutil
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
 USER = REPO.split('/')[0] if REPO else 'merryAndrew'
+REPO_NAME = REPO.split('/')[1] if REPO and '/' in REPO else 'HealthCertificate'
 
 url = f'https://api.github.com/repos/{REPO}/issues?state=all&per_page=100'
 headers = {'Authorization': f'token {TOKEN}', 'Accept': 'application/vnd.github.v3+json'}
@@ -17,6 +18,7 @@ issues = requests.get(url, headers=headers).json()
 print(f"📡 获取到 {len(issues)} 个 Issue")
 
 def extract_first_image(text):
+    """从文本中提取第一张图片 URL"""
     match = re.search(r'!\[.*?\]\((https?://[^\s]+)\)', text)
     if match:
         return match.group(1)
@@ -37,23 +39,34 @@ def build_card(issue, style='A'):
     for comment in comments:
         all_text += ' ' + comment.get('body', '')
 
-    gender = re.search(r'性别[：:]\s*(.+)', all_text)
-    date = re.search(r'体检日期[：:]\s*(.+)', all_text)
-    id_num = re.search(r'身份证[：:]\s*(.+)', all_text)
+    # ----- 字段提取（支持中文和英文冒号） -----
+    name = title  # 标题即为姓名
+
+    gender_match = re.search(r'性别[：:]\s*(.+)', all_text)
+    gender = gender_match.group(1).strip() if gender_match else '男'
+
+    id_match = re.search(r'身份证[：:]\s*(.+)', all_text)
+    id_num = id_match.group(1).strip() if id_match else '无'
+
+    date_match = re.search(r'体检日期[：:]\s*(.+)', all_text)
+    if date_match:
+        date_display = date_match.group(1).strip()
+    else:
+        date_display = '未选择日期 (有效期一年)'
+
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    name = title.split('_')[0] if '_' in title else title
-    date_display = date.group(1) if date else '未选择日期 (有效期一年)'
-
-    page_url = f'https://{USER}.github.io/Healths/?id={title}'
+    # 二维码（链接到 card.html 并带上标题参数）
+    page_url = f'https://{USER}.github.io/{REPO_NAME}/card.html?id={title}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
+    # ----- 样式 A（带印章，供 card.html 使用） -----
     if style == 'A':
         return f'''
         <div class="cert-wrapper" data-title="{title}">
@@ -67,13 +80,13 @@ def build_card(issue, style='A'):
                             <span>{name}</span>
                             <span class="gender-separator" style="font-weight: bold;">性 别</span>
                             <span>∶</span>
-                            <span>{gender.group(1) if gender else '男'}</span>
+                            <span>{gender}</span>
                         </div>
                         <div class="id-group">
                             <div class="info-line">
                                 <span style="font-weight: bold;">身份证号码</span>
                                 <span>∶</span>
-                                <span>{id_num.group(1) if id_num else '无'}</span>
+                                <span>{id_num}</span>
                             </div>
                             <div class="info-line">(或其它有效证明)</div>
                         </div>
@@ -117,6 +130,7 @@ def build_card(issue, style='A'):
             </div>
         </div>
         '''
+    # ----- 样式 B（简洁，供 index.html 使用） -----
     else:
         return f'''
         <div class="cert-wrapper" data-title="{title}">
@@ -131,13 +145,13 @@ def build_card(issue, style='A'):
                             <span class="gender-separator"></span>
                             <span class="label">性 别</span>
                             <span class="colon">∶</span>
-                            <span class="content">{gender.group(1) if gender else '男'}</span>
+                            <span class="content">{gender}</span>
                         </div>
                         <div class="id-group">
                             <div class="info-line">
                                 <span class="label">身份证号码</span>
                                 <span class="colon">∶</span>
-                                <span class="content">{id_num.group(1) if id_num else '无'}</span>
+                                <span class="content">{id_num}</span>
                             </div>
                             <div class="info-line">(或其它有效证明)</div>
                         </div>
@@ -172,6 +186,7 @@ def build_card(issue, style='A'):
         </div>
         '''
 
+# ---- 生成所有卡片 ----
 cards_A = []
 cards_B = []
 for issue in issues:
@@ -183,7 +198,7 @@ for issue in issues:
 cards_A.reverse()
 cards_B.reverse()
 
-# ========== A 样式（截图版）标题改为“健康证服务-证件查询” ==========
+# ===== 样式 A（card.html） =====
 html_A = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -192,6 +207,7 @@ html_A = f'''<!DOCTYPE html>
     <title>健康证服务-证件查询</title>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* 与您原有样式保持一致，此处略，但保留全部 */
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e0d6c7; padding: 10px; min-height: 100vh; }}
         .app-wrapper {{ max-width: 450px; margin: 0 auto; }}
@@ -252,7 +268,7 @@ html_A = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
-# B 样式（用户扫码版）标题保持“健康证查询”不变
+# ===== 样式 B（index.html） =====
 html_B = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -279,7 +295,7 @@ html_B = f'''<!DOCTYPE html>
         .photo img {{ width: 100%; height: 100%; object-fit: cover; }}
         .middle-card {{ display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; color: #333; text-align: center; width: 100%; height: 180px; font-weight: bold; }}
         .middle-line {{ margin: 5px 0; }}
-        .bottom-card {{ border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 11px; text-align: center; background: #f8f8c; box-shadow: 0 8px 16px rgba(0,0,0,0.35); }}
+        .bottom-card {{ border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 11px; text-align: center; background: #f8f8f8; box-shadow: 0 8px 16px rgba(0,0,0,0.35); }}
         .qrcode-area {{ text-align: center; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }}
         .qrcode-img {{ width: 120px; height: 120px; margin: 0 auto 10px; }}
         .qrcode-img img {{ width: 100%; height: 100%; object-fit: contain; }}
@@ -313,13 +329,14 @@ html_B = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
+# ===== 写入文件 =====
 os.makedirs('dist', exist_ok=True)
 with open('dist/index.html', 'w', encoding='utf-8') as f:
     f.write(html_B)
 with open('dist/card.html', 'w', encoding='utf-8') as f:
     f.write(html_A)
 
-# ========== 新增：复制 upload.html 到 dist ==========
+# 复制 upload.html 到 dist
 if os.path.exists('upload.html'):
     shutil.copy('upload.html', 'dist/upload.html')
     print("✅ 已复制 upload.html 到发布目录")
