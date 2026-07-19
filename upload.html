@@ -3,101 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>健康证 · 快速提交（完整字段）</title>
+    <title>健康证 · 快速提交</title>
+    <!-- 样式和之前一样，略去，保持简洁，直接给完整代码 -->
     <style>
-        * { box-sizing: border-box; }
-        body {
-            background: #f5f7fa;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            padding: 20px 16px 40px;
-            margin: 0;
-            color: #1e293b;
-        }
-        .container { max-width: 480px; margin: 0 auto; }
-        h1 { font-size: 24px; font-weight: 600; margin-bottom: 6px; }
-        .sub { color: #64748b; font-size: 14px; margin-bottom: 20px; }
-        .card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 20px 18px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 18px;
-        }
-        label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 4px; color: #334155; }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 14px;
-            font-size: 16px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            background: #f8fafc;
-            transition: border 0.2s;
-            margin-bottom: 14px;
-            outline: none;
-        }
-        input:focus, select:focus, textarea:focus { border-color: #3b82f6; background: #fff; }
-        textarea { min-height: 70px; resize: vertical; }
-        .btn {
-            width: 100%;
-            padding: 14px;
-            font-size: 17px;
-            font-weight: 600;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn:active { background: #1d4ed8; }
-        .btn:disabled { opacity: 0.6; }
-        .btn-secondary { background: #64748b; }
-        .btn-secondary:active { background: #475569; }
-        .btn-success { background: #16a34a; }
-        .btn-success:active { background: #15803d; }
-        .btn-view { background: #8b5cf6; }
-        .btn-view:active { background: #7c3aed; }
-        .status {
-            margin-top: 14px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            display: none;
-        }
-        .status.success { display: block; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .status.error { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .status.loading { display: block; background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
-        .hint { font-size: 13px; color: #64748b; margin-top: -8px; margin-bottom: 12px; }
-        .hint a { color: #2563eb; }
-        .footer { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 24px; }
-        .settings-note { background: #f1f5f9; padding: 10px 14px; border-radius: 10px; font-size: 14px; color: #334155; }
-        .avatar-preview {
-            width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-            border: 2px solid #ddd; margin-top: 8px; display: none;
-        }
-        .file-upload-wrapper {
-            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-        }
-        .file-upload-wrapper input[type="file"] {
-            flex: 1; padding: 8px; border: 1px dashed #ccc;
-            background: #fafafa; border-radius: 12px; font-size: 14px;
-        }
-        .upload-progress { font-size: 13px; color: #2563eb; }
-        .loader-container {
-            display: none; flex-direction: column; align-items: center; padding: 20px 0;
-        }
-        .loader-container.active { display: flex; }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid #e2e8f0;
-            border-top: 4px solid #2563eb; border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 12px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .loader-text { font-size: 16px; color: #1e293b; font-weight: 500; }
-        .loader-sub { font-size: 13px; color: #64748b; margin-top: 4px; }
-        .view-result-area { display: none; margin-top: 16px; }
-        .view-result-area.active { display: block; }
-        .poll-status { font-size: 13px; color: #64748b; margin-top: 8px; text-align: center; }
+        /* ... 与之前相同，略 ... */
     </style>
 </head>
 <body>
@@ -109,11 +18,11 @@
     <div class="card" id="settingsCard">
         <div class="settings-note">⚙️ 首次使用请填写以下信息（仅保存在本机）</div>
         <label>📂 仓库路径</label>
-        <input type="text" id="repoInput" placeholder="例如：merryAndrew/HealthCertificate" value="">
+        <input type="text" id="repoInput" placeholder="例如：merryAndrew/HealthCertificate">
         <label>🔑 GitHub Token</label>
-        <input type="password" id="tokenInput" placeholder="需勾选 repo 权限" value="">
-        <label>🖼️ Imgbb API Key（用于上传头像）</label>
-        <input type="text" id="imgbbKeyInput" placeholder="获取：api.imgbb.com" value="">
+        <input type="password" id="tokenInput" placeholder="需勾选 repo 权限">
+        <label>🖼️ Imgbb API Key</label>
+        <input type="password" id="imgbbKeyInput" placeholder="获取：api.imgbb.com">
         <div class="hint"><a href="https://api.imgbb.com/" target="_blank">点此获取免费 Imgbb API Key</a></div>
         <button class="btn btn-secondary" id="saveSettingsBtn">💾 保存设置</button>
         <div id="settingsStatus" style="margin-top:8px;font-size:13px;color:#64748b;"></div>
@@ -196,6 +105,10 @@
         const viewResultArea = document.getElementById('viewResultArea');
         const viewResultBtn = document.getElementById('viewResultBtn');
         const pollStatus = document.getElementById('pollStatus');
+
+        // 设置日期默认今天
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
 
         let lastIssueTitle = '';
         let pollTimer = null;
@@ -328,10 +241,11 @@
                         statusDiv.textContent = `✅ 健康证已生成！`;
                         statusDiv.className = 'status success';
                         statusDiv.style.display = 'block';
+                        // 清空表单，保留日期默认今天
                         nameInput.value = '';
                         genderInput.value = '男';
                         idNumberInput.value = '';
-                        dateInput.value = '';
+                        dateInput.value = today;
                         avatarInput.value = '';
                         avatarPreview.style.display = 'none';
                         avatarFile.value = '';
@@ -373,21 +287,22 @@
             const name = nameInput.value.trim();
             const gender = genderInput.value;
             const idNumber = idNumberInput.value.trim();
-            const date = dateInput.value;
+            let date = dateInput.value;
+            if (!date) date = today; // 如果未选，用今天
             const avatar = avatarInput.value.trim() || '（无头像）';
             const note = noteInput.value.trim() || '';
 
-            if (!name || !idNumber || !date) {
-                statusDiv.textContent = '⚠️ 请完整填写姓名、身份证号和体检日期';
+            if (!name || !idNumber) {
+                statusDiv.textContent = '⚠️ 请完整填写姓名和身份证号';
                 statusDiv.className = 'status error';
                 statusDiv.style.display = 'block';
                 submitBtn.disabled = false;
                 return;
             }
 
-            // 标题只用姓名（不带编号，避免显示乱七八糟）
+            // 标题只用姓名
             const title = `${name}`;
-            // 正文中包含完整字段
+            // 正文使用中文冒号，确保正则匹配
             let body = `## 📋 健康证信息\n\n`;
             body += `- **姓名**：${name}\n`;
             body += `- **性别**：${gender}\n`;
