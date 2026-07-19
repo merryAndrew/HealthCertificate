@@ -5,7 +5,7 @@ import qrcode
 from io import BytesIO
 import base64
 import shutil
-import urllib.parse  # 新增：用于URL编码
+import urllib.parse
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
@@ -34,7 +34,6 @@ def extract_first_image(text):
     return None
 
 def format_date(raw_date):
-    """将 YYYY-MM-DD 转换为 YYYY年M月D日 (有效期一年)"""
     if not raw_date:
         return '未选择日期 (有效期一年)'
     raw_date = raw_date.strip()
@@ -73,9 +72,9 @@ def build_card(issue, style='A'):
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    # 🔥 关键修改：对标题进行URL编码，保证中文可访问
+    # 🔥 关键修改：生成带双引号的链接格式 ?id="标题"
     encoded_title = urllib.parse.quote(title)
-    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
+    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id="{encoded_title}"'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
@@ -256,9 +255,10 @@ html_A = f'''<!DOCTYPE html>
     <script>
         (function() {{
             const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
+            let id = params.get('id');
             if (id) {{
-                // 🔥 解码 URL 编码的中文
+                // 去掉可能存在的首尾双引号
+                id = id.replace(/^"|"$/g, '');
                 const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
                 let found = false;
@@ -318,9 +318,10 @@ html_B = f'''<!DOCTYPE html>
     <script>
         (function() {{
             const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
+            let id = params.get('id');
             if (id) {{
-                // 🔥 解码 URL 编码的中文
+                // 去掉可能存在的首尾双引号
+                id = id.replace(/^"|"$/g, '');
                 const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
                 let found = false;
