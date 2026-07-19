@@ -208,7 +208,7 @@ for issue in issues:
 cards_A.reverse()
 cards_B.reverse()
 
-# 统一标题栏（无缝贴顶、居中、返回按钮左置）
+# 标题栏：左右无间距，贴边，居中，返回按钮左置
 header_html = '''
 <div id="custom-header" style="display: none; position: sticky; top: 0; z-index: 1000; background: #ffffff; padding: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-bottom: 1px solid #f0f2f5; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; color: #1a2332; width: 100%;">
     <span id="header-back" style="position: absolute; left: 16px; cursor: pointer; font-size: 22px; line-height: 1; color: #1a2332;">‹</span>
@@ -252,7 +252,7 @@ html_A = f'''<!DOCTYPE html>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e0d6c7; padding: 0; min-height: 100vh; }}
-        .app-wrapper {{ max-width: 450px; margin: 0 auto; padding-top: 20px; }}
+        .app-wrapper {{ max-width: 450px; margin: 0 auto; padding: 20px 16px 0 16px; }}
         .photo .seal-container {{ position: absolute !important; top: 44px !important; left: -47px !important; z-index: 999 !important; }}
         .photo .seal-img {{ width: 63px !important; height: 63px !important; object-fit: contain !important; opacity: 1 !important; display: block !important; }}
         .cert-module {{ background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; height: 180px; }}
@@ -323,8 +323,8 @@ html_B = f'''<!DOCTYPE html>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 0; }}
-        .app-wrapper {{ max-width: 450px; margin: 0 auto; padding-top: 20px; }}
-        .cert-wrapper {{ margin: 0 auto 20px auto; padding: 0 10px; }}
+        .app-wrapper {{ max-width: 450px; margin: 0 auto; padding: 20px 16px 0 16px; }}
+        .cert-wrapper {{ margin-bottom: 20px; }}
         .cert-module {{ background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }}
         .top-card {{ font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }}
         .top-title {{ text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }}
