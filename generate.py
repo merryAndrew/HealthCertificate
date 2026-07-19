@@ -72,9 +72,9 @@ def build_card(issue, style='A'):
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
     print(f"📸 标题 '{title}' 的图片链接: {img_url}")
 
-    # 关键修改：生成带双引号的链接 ?id="编码后的标题"
+    # 二维码链接直接使用 ?id=标题（不添加引号）
     encoded_title = urllib.parse.quote(title)
-    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id="{encoded_title}"'
+    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
@@ -209,27 +209,24 @@ for issue in issues:
 cards_A.reverse()
 cards_B.reverse()
 
-# 自定义标题栏的 HTML 代码（用于 A 和 B 版）
+# 标题栏HTML - 无缝贴合，标题居中，返回按钮在左侧
 header_html = '''
-<div id="custom-header" style="display: none; position: sticky; top: 0; z-index: 1000; background: #ffffff; padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-bottom: 1px solid #f0f2f5; align-items: center; gap: 12px; font-size: 18px; font-weight: 600; color: #1a2332;">
-    <span style="cursor: pointer; font-size: 20px; line-height: 1;" onclick="history.back();">‹</span>
+<div id="custom-header" style="display: none; position: sticky; top: 0; z-index: 1000; background: #ffffff; padding: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-bottom: 1px solid #f0f2f5; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; color: #1a2332; width: 100%;">
+    <span id="header-back" style="position: absolute; left: 16px; cursor: pointer; font-size: 22px; line-height: 1; color: #1a2332;">‹</span>
     <span id="header-title">健康证查询</span>
 </div>
 <script>
     (function() {
-        // 检测是否在微信、QQ等内置浏览器中（这些环境通常自带标题栏）
         var ua = navigator.userAgent.toLowerCase();
         var isWechat = ua.indexOf('micromessenger') !== -1;
         var isQQ = ua.indexOf('qq/') !== -1;
         var isBrowser = !isWechat && !isQQ;
-        // 如果是在普通浏览器中，显示自定义标题栏
         if (isBrowser) {
             var header = document.getElementById('custom-header');
             if (header) {
                 header.style.display = 'flex';
             }
         }
-        // 设置标题文字（根据不同页面）
         var titleEl = document.getElementById('header-title');
         if (titleEl) {
             var pageTitle = document.title;
@@ -239,11 +236,17 @@ header_html = '''
                 titleEl.textContent = '健康证查询';
             }
         }
+        var backBtn = document.getElementById('header-back');
+        if (backBtn) {
+            backBtn.addEventListener('click', function() {
+                history.back();
+            });
+        }
     })();
 </script>
 '''
 
-# A 版（card.html）模板
+# A 版（card.html）
 html_A = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -253,7 +256,7 @@ html_A = f'''<!DOCTYPE html>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e0d6c7; padding: 10px; min-height: 100vh; }}
+        body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e0d6c7; padding: 10px 0 10px 0; min-height: 100vh; }}
         .app-wrapper {{ max-width: 450px; margin: 0 auto; }}
         .photo .seal-container {{ position: absolute !important; top: 44px !important; left: -47px !important; z-index: 999 !important; }}
         .photo .seal-img {{ width: 63px !important; height: 63px !important; object-fit: contain !important; opacity: 1 !important; display: block !important; }}
@@ -291,10 +294,8 @@ html_A = f'''<!DOCTYPE html>
     <script>
         (function() {{
             const params = new URLSearchParams(window.location.search);
-            let id = params.get('id');
+            const id = params.get('id');
             if (id) {{
-                // 去掉可能存在的首尾双引号
-                id = id.replace(/^"|"$/g, '');
                 const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
                 let found = false;
@@ -316,7 +317,7 @@ html_A = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
-# B 版（index.html）模板
+# B 版（index.html）
 html_B = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -326,8 +327,8 @@ html_B = f'''<!DOCTYPE html>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }}
-        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; }}
+        body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 0; }}
+        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; padding: 0 10px; }}
         .cert-module {{ background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }}
         .top-card {{ font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }}
         .top-title {{ text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }}
@@ -352,13 +353,14 @@ html_B = f'''<!DOCTYPE html>
 </head>
 <body>
     {header_html}
-    {''.join(cards_B)}
+    <div style="padding-top: 0;">
+        {''.join(cards_B)}
+    </div>
     <script>
         (function() {{
             const params = new URLSearchParams(window.location.search);
-            let id = params.get('id');
+            const id = params.get('id');
             if (id) {{
-                id = id.replace(/^"|"$/g, '');
                 const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
                 let found = false;
