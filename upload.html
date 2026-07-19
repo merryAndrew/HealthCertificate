@@ -179,7 +179,7 @@
             background: #eef2f7;
             color: #1a2332;
             border: none;
-            border-radius: 25px;
+            border-radius: 7px;  /* 改为 7px */
             cursor: pointer;
             transition: background 0.2s;
             line-height: 1.6;
@@ -196,6 +196,7 @@
             line-height: 1.6;
             white-space: nowrap;
             flex: 0 0 auto;
+            padding-left: 4px;
         }
         .avatar-zone .upload-status.success {
             color: #0d6832;
@@ -206,6 +207,36 @@
         .avatar-zone .upload-status.loading {
             color: #2b6ef0;
         }
+
+        /* 进度条容器 */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #e8ecf2;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-container.active {
+            display: block;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #2b6ef0;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        .progress-bar.animate {
+            animation: progressAnim 1.8s ease-in-out infinite;
+        }
+        @keyframes progressAnim {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
         .avatar-preview-wrap {
             display: flex;
             align-items: center;
@@ -468,6 +499,11 @@
                 <input type="file" id="avatarFile" accept="image/*" style="display:none;">
                 <span class="file-name" id="fileName">未选择</span>
                 <button class="upload-btn" id="uploadAvatarBtn">上传并获取链接</button>
+                <span class="upload-status" id="uploadStatus"></span>
+            </div>
+            <!-- 进度条 -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
             </div>
             <div class="avatar-preview-wrap">
                 <img id="avatarPreview" alt="头像预览">
@@ -524,6 +560,8 @@
         const viewResultArea = document.getElementById('viewResultArea');
         const viewResultBtn = document.getElementById('viewResultBtn');
         const pollStatus = document.getElementById('pollStatus');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
 
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
@@ -532,6 +570,20 @@
         let pollTimer = null;
         let pollCount = 0;
         const MAX_POLLS = 24;
+
+        // 进度条控制
+        function showProgress() {
+            progressContainer.classList.add('active');
+            progressBar.classList.remove('animate');
+            // 强制重绘
+            void progressBar.offsetWidth;
+            progressBar.classList.add('animate');
+        }
+        function hideProgress() {
+            progressContainer.classList.remove('active');
+            progressBar.classList.remove('animate');
+            progressBar.style.width = '0%';
+        }
 
         fileSelectBtn.addEventListener('click', function() {
             avatarFile.click();
@@ -628,6 +680,9 @@
             }
             uploadStatus.textContent = '⏳ 上传中...';
             uploadStatus.className = 'upload-status loading';
+            // 显示进度条
+            showProgress();
+
             const formData = new FormData();
             formData.append('key', imgbbKey);
             formData.append('image', file);
@@ -647,6 +702,9 @@
             } catch (err) {
                 uploadStatus.textContent = '❌ ' + err.message;
                 uploadStatus.className = 'upload-status error';
+            } finally {
+                // 隐藏进度条
+                hideProgress();
             }
         });
 
@@ -707,6 +765,9 @@
                         avatarPreview.style.display = 'none';
                         avatarFile.value = '';
                         fileName.textContent = '未选择';
+                        uploadStatus.textContent = '';
+                        uploadStatus.className = 'upload-status';
+                        hideProgress();
                     }
                 } catch (e) {}
                 if (pollCount >= MAX_POLLS) {
