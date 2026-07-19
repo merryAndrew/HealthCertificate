@@ -33,6 +33,38 @@
 </head>
 <body>
     
+<div id="custom-header" style="display: none; position: sticky; top: 0; z-index: 1000; background: #ffffff; padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-bottom: 1px solid #f0f2f5; align-items: center; gap: 12px; font-size: 18px; font-weight: 600; color: #1a2332;">
+    <span style="cursor: pointer; font-size: 20px; line-height: 1;" onclick="history.back();">‹</span>
+    <span id="header-title">健康证查询</span>
+</div>
+<script>
+    (function() {
+        // 检测是否在微信、QQ等内置浏览器中（这些环境通常自带标题栏）
+        var ua = navigator.userAgent.toLowerCase();
+        var isWechat = ua.indexOf('micromessenger') !== -1;
+        var isQQ = ua.indexOf('qq/') !== -1;
+        var isBrowser = !isWechat && !isQQ;
+        // 如果是在普通浏览器中，显示自定义标题栏
+        if (isBrowser) {
+            var header = document.getElementById('custom-header');
+            if (header) {
+                header.style.display = 'flex';
+            }
+        }
+        // 设置标题文字（根据不同页面）
+        var titleEl = document.getElementById('header-title');
+        if (titleEl) {
+            var pageTitle = document.title;
+            if (pageTitle.includes('证件查询')) {
+                titleEl.textContent = '健康证服务-证件查询';
+            } else {
+                titleEl.textContent = '健康证查询';
+            }
+        }
+    })();
+</script>
+
+    
         <div class="cert-wrapper" data-title="潘启杰">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
@@ -142,7 +174,6 @@
             const params = new URLSearchParams(window.location.search);
             let id = params.get('id');
             if (id) {
-                // 去掉可能存在的首尾双引号
                 id = id.replace(/^"|"$/g, '');
                 const decodedId = decodeURIComponent(id);
                 const wrappers = document.querySelectorAll('.cert-wrapper');
