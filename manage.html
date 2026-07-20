@@ -34,12 +34,24 @@
         .name-cell { white-space: nowrap; min-width: 80px; }
         .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
         .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
-        .toast { position: fixed; top: 20px; right: 20px; background: #1f883d; color: #fff; padding: 12px 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-20px); transition: 0.3s; z-index: 999; font-weight: 500; }
-        .toast.error { background: #cf222e; }
-        .toast.show { opacity: 1; transform: translateY(0); }
-        .loading-spinner { text-align: center; padding: 40px 0; }
-        .loading-spinner .spinner { width: 40px; height: 40px; border: 4px solid #e8ecf2; border-top: 4px solid #1a2332; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+
+        /* ===== Toast — 强制居中 ===== */
+        .toast-center { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 3000; justify-content: center; align-items: center; }
+        .toast-center.active { display: flex; }
+        .toast-center .toast-box { background: #fff; border-radius: 16px; padding: 30px 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; max-width: 400px; width: 90%; }
+        .toast-center .toast-box .icon { font-size: 48px; margin-bottom: 12px; }
+        .toast-center .toast-box .msg { font-size: 18px; font-weight: 500; color: #1a2332; }
+        .toast-center .toast-box .sub { font-size: 14px; color: #6b7a8f; margin-top: 6px; }
+        .toast-center .toast-box .btn-close-toast { margin-top: 20px; padding: 8px 32px; background: #1a2332; color: #fff; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; }
+
+        /* ===== 加载动画 — 强制居中 ===== */
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
+        .loading-overlay.active { display: flex; }
+        .loading-overlay .spinner { width: 48px; height: 48px; border: 4px solid #e8ecf2; border-top: 4px solid #1a2332; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+        .loading-overlay .loading-text { font-size: 16px; color: #1a2332; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+
+        /* ===== 模态框强制居中 ===== */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
         .modal-overlay.active { display: block; }
         .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 16px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 28px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -76,6 +88,7 @@
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="header">
         <h1>📋 数据管理</h1>
@@ -87,10 +100,6 @@
     <div class="search-bar">
         <input type="text" id="searchInput" placeholder="🔍 搜索姓名...">
         <span class="badge" id="countDisplay">共 0 条</span>
-    </div>
-    <div id="loadingArea" class="loading-spinner" style="display:none;">
-        <div class="spinner"></div>
-        <div style="margin-top:12px; color:#6b7a8f;">加载中...</div>
     </div>
     <div class="table-wrap" id="tableWrap">
         <table>
@@ -104,6 +113,24 @@
         <button class="btn btn-danger" id="batchDeleteBtn">🗑️ 批量删除</button>
     </div>
 </div>
+
+<!-- ===== Toast 居中弹窗 ===== -->
+<div class="toast-center" id="toastCenter">
+    <div class="toast-box">
+        <div class="icon" id="toastIcon">✅</div>
+        <div class="msg" id="toastMsg">加载成功</div>
+        <div class="sub" id="toastSub">共 10 条</div>
+        <button class="btn-close-toast" id="toastCloseBtn">知道了</button>
+    </div>
+</div>
+
+<!-- ===== 加载动画 ===== -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">加载中...</div>
+</div>
+
+<!-- ===== 编辑模态框 ===== -->
 <div class="modal-overlay" id="editModalOverlay">
     <div class="modal-box">
         <button class="close-btn" id="editModalCloseBtn">&times;</button>
@@ -142,6 +169,8 @@
         </form>
     </div>
 </div>
+
+<!-- ===== 确认/进度弹窗 ===== -->
 <div class="modal-overlay" id="confirmModalOverlay">
     <div class="modal-box confirm-box">
         <h2 id="confirmTitle">确认操作</h2>
@@ -154,105 +183,98 @@
         <div class="confirm-status" id="confirmStatus">⏳ 正在处理并等待部署...</div>
     </div>
 </div>
-<div id="toast" class="toast"></div>
+
 <script>
 (function() {
-    const REPO_KEY = 'github_issue_upload_repo';
-    const TOKEN_KEY = 'github_issue_upload_token';
-    const IMGBB_KEY = 'github_issue_upload_imgbb';
+    var REPO_KEY = 'github_issue_upload_repo';
+    var TOKEN_KEY = 'github_issue_upload_token';
+    var IMGBB_KEY = 'github_issue_upload_imgbb';
+
     function getRepo() { return localStorage.getItem(REPO_KEY) || ''; }
     function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
     function getImgbbKey() { return localStorage.getItem(IMGBB_KEY) || ''; }
-    const tbody = document.getElementById('tableBody');
-    const noData = document.getElementById('noData');
-    const searchInput = document.getElementById('searchInput');
-    const countDisplay = document.getElementById('countDisplay');
-    const selectAll = document.getElementById('selectAll');
-    const selectedCount = document.getElementById('selectedCount');
-    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
-    const refreshBtn = document.getElementById('refreshBtn');
-    const loadingArea = document.getElementById('loadingArea');
-    const editModalOverlay = document.getElementById('editModalOverlay');
-    const editModalCloseBtn = document.getElementById('editModalCloseBtn');
-    const editModalTitle = document.getElementById('editModalTitle');
-    const editForm = document.getElementById('editForm');
-    const editIssueNumber = document.getElementById('editIssueNumber');
-    const editSubmitBtn = document.getElementById('editSubmitBtn');
-    const editProgress = document.getElementById('editProgress');
-    const editStatus = document.getElementById('editStatus');
-    const confirmModalOverlay = document.getElementById('confirmModalOverlay');
-    const confirmTitle = document.getElementById('confirmTitle');
-    const confirmMessage = document.getElementById('confirmMessage');
-    const confirmActions = document.getElementById('confirmActions');
-    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
-    const confirmOkBtn = document.getElementById('confirmOkBtn');
-    const confirmProgress = document.getElementById('confirmProgress');
-    const confirmStatus = document.getElementById('confirmStatus');
-    const f_title = document.getElementById('f_title');
-    const f_name = document.getElementById('f_name');
-    const f_gender = document.getElementById('f_gender');
-    const f_idNumber = document.getElementById('f_idNumber');
-    const f_hospital = document.getElementById('f_hospital');
-    const f_date = document.getElementById('f_date');
-    const f_duan1 = document.getElementById('f_duan1');
-    const f_duan2 = document.getElementById('f_duan2');
-    const f_afangwei = document.getElementById('f_afangwei');
-    const f_bhealth = document.getElementById('f_bhealth');
-    const f_aCard3 = document.getElementById('f_aCard3');
-    const f_bCard3 = document.getElementById('f_bCard3');
-    const f_avatar = document.getElementById('f_avatar');
-    const editFileBtn = document.getElementById('editFileBtn');
-    const editAvatarFile = document.getElementById('editAvatarFile');
-    const editFileName = document.getElementById('editFileName');
-    const editUploadBtn = document.getElementById('editUploadBtn');
-    const editUploadStatus = document.getElementById('editUploadStatus');
-    const editAvatarPreview = document.getElementById('editAvatarPreview');
-    let allIssues = [], filteredIssues = [], selectedIds = new Set();
-    let pollTimer = null, pollCount = 0;
-    const MAX_POLLS = 24;
 
-    function showToast(msg, isError) {
-        const toast = document.getElementById('toast');
-        toast.textContent = msg;
-        toast.className = 'toast' + (isError ? ' error' : '');
-        toast.classList.add('show');
-        clearTimeout(window._toastTimer);
-        window._toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+    var tbody = document.getElementById('tableBody');
+    var noData = document.getElementById('noData');
+    var searchInput = document.getElementById('searchInput');
+    var countDisplay = document.getElementById('countDisplay');
+    var selectAll = document.getElementById('selectAll');
+    var selectedCount = document.getElementById('selectedCount');
+    var batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    var refreshBtn = document.getElementById('refreshBtn');
+    var loadingOverlay = document.getElementById('loadingOverlay');
+    var loadingText = document.getElementById('loadingText');
+
+    // Toast 居中弹窗
+    var toastCenter = document.getElementById('toastCenter');
+    var toastIcon = document.getElementById('toastIcon');
+    var toastMsg = document.getElementById('toastMsg');
+    var toastSub = document.getElementById('toastSub');
+    var toastCloseBtn = document.getElementById('toastCloseBtn');
+
+    var editModalOverlay = document.getElementById('editModalOverlay');
+    var editModalCloseBtn = document.getElementById('editModalCloseBtn');
+    var editModalTitle = document.getElementById('editModalTitle');
+    var editForm = document.getElementById('editForm');
+    var editIssueNumber = document.getElementById('editIssueNumber');
+    var editSubmitBtn = document.getElementById('editSubmitBtn');
+    var editProgress = document.getElementById('editProgress');
+    var editStatus = document.getElementById('editStatus');
+
+    var confirmModalOverlay = document.getElementById('confirmModalOverlay');
+    var confirmTitle = document.getElementById('confirmTitle');
+    var confirmMessage = document.getElementById('confirmMessage');
+    var confirmActions = document.getElementById('confirmActions');
+    var confirmCancelBtn = document.getElementById('confirmCancelBtn');
+    var confirmOkBtn = document.getElementById('confirmOkBtn');
+    var confirmProgress = document.getElementById('confirmProgress');
+    var confirmStatus = document.getElementById('confirmStatus');
+
+    var f_title = document.getElementById('f_title');
+    var f_name = document.getElementById('f_name');
+    var f_gender = document.getElementById('f_gender');
+    var f_idNumber = document.getElementById('f_idNumber');
+    var f_hospital = document.getElementById('f_hospital');
+    var f_date = document.getElementById('f_date');
+    var f_duan1 = document.getElementById('f_duan1');
+    var f_duan2 = document.getElementById('f_duan2');
+    var f_afangwei = document.getElementById('f_afangwei');
+    var f_bhealth = document.getElementById('f_bhealth');
+    var f_aCard3 = document.getElementById('f_aCard3');
+    var f_bCard3 = document.getElementById('f_bCard3');
+    var f_avatar = document.getElementById('f_avatar');
+    var editFileBtn = document.getElementById('editFileBtn');
+    var editAvatarFile = document.getElementById('editAvatarFile');
+    var editFileName = document.getElementById('editFileName');
+    var editUploadBtn = document.getElementById('editUploadBtn');
+    var editUploadStatus = document.getElementById('editUploadStatus');
+    var editAvatarPreview = document.getElementById('editAvatarPreview');
+
+    var allIssues = [], filteredIssues = [], selectedIds = new Set();
+    var pollTimer = null;
+    var MAX_POLLS = 24;
+
+    // ===== Toast 居中显示 =====
+    function showToastCenter(icon, msg, sub) {
+        toastIcon.textContent = icon || '✅';
+        toastMsg.textContent = msg || '操作成功';
+        toastSub.textContent = sub || '';
+        toastCenter.classList.add('active');
     }
 
-    function startPolling(title, onComplete) {
-        pollCount = 0;
-        if (pollTimer) clearInterval(pollTimer);
-        pollTimer = setInterval(async function() {
-            pollCount++;
-            var msg = '正在等待部署完成... (' + (pollCount * 5) + '秒)';
-            if (editStatus.classList.contains('active')) { editStatus.textContent = '⏳ ' + msg; }
-            if (confirmStatus.classList.contains('active')) { confirmStatus.textContent = '⏳ ' + msg; }
-            try {
-                var url = 'https://merryAndrew.github.io/HealthCertificate/card.html?t=' + Date.now();
-                var resp = await fetch(url);
-                if (!resp.ok) return;
-                var html = await resp.text();
-                if (title === '__DELETE__') {
-                    if (pollCount >= 6) {
-                        clearInterval(pollTimer); pollTimer = null;
-                        if (onComplete) onComplete();
-                        return;
-                    }
-                } else {
-                    if (html.indexOf('data-title="' + title + '"') !== -1) {
-                        clearInterval(pollTimer); pollTimer = null;
-                        if (onComplete) onComplete();
-                        return;
-                    }
-                }
-            } catch (e) {}
-            if (pollCount >= MAX_POLLS) {
-                clearInterval(pollTimer); pollTimer = null;
-                showToast('⚠️ 检测超时，请稍后手动刷新', true);
-                if (onComplete) onComplete();
-            }
-        }, 5000);
+    function hideToastCenter() {
+        toastCenter.classList.remove('active');
+    }
+    toastCloseBtn.onclick = hideToastCenter;
+    toastCenter.onclick = function(e) { if (e.target === this) hideToastCenter(); };
+
+    function showLoading(msg) {
+        loadingText.textContent = msg || '加载中...';
+        loadingOverlay.classList.add('active');
+    }
+
+    function hideLoading() {
+        loadingOverlay.classList.remove('active');
     }
 
     function parseIssue(issue) {
@@ -260,8 +282,11 @@
         var get = function(key) { var m = body.match(new RegExp(key + '[：:]\\s*(.+)')); return m ? m[1].trim() : ''; };
         var avatarMatch = body.match(/头像图片[：:]\s*(https?:\/\/[^\s]+)/);
         return {
-            id: issue.id, number: issue.number, name: issue.title,
-            idCard: get('身份证'), avatar: avatarMatch ? avatarMatch[1] : '',
+            id: issue.id,
+            number: issue.number,
+            name: issue.title,
+            idCard: get('身份证'),
+            avatar: avatarMatch ? avatarMatch[1] : '',
             raw: {
                 titleVal: get('标题') || '广东省食品从业人员健康证明',
                 gender: get('性别') || '男',
@@ -281,6 +306,7 @@
     function escapeHtml(t) { if (!t) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
     function updateSelectedCount() { selectedCount.textContent = selectedIds.size; }
+
     function updateSelectAllState() {
         var total = filteredIssues.length;
         if (total === 0) { selectAll.checked = false; selectAll.indeterminate = false; return; }
@@ -288,8 +314,8 @@
         for (var i = 0; i < filteredIssues.length; i++) {
             if (selectedIds.has(filteredIssues[i].id)) checked++;
         }
-        selectAll.checked = checked === total;
-        selectAll.indeterminate = checked > 0 && checked < total;
+        selectAll.checked = (checked === total);
+        selectAll.indeterminate = (checked > 0 && checked < total);
     }
 
     function bindEvents() {
@@ -298,8 +324,10 @@
             (function(cb) {
                 cb.onchange = function() {
                     var id = parseInt(this.dataset.id);
-                    if (this.checked) selectedIds.add(id); else selectedIds.delete(id);
-                    updateSelectedCount(); updateSelectAllState();
+                    if (this.checked) selectedIds.add(id);
+                    else selectedIds.delete(id);
+                    updateSelectedCount();
+                    updateSelectAllState();
                 };
             })(cbs[i]);
         }
@@ -343,29 +371,40 @@
             html += '<button class="btn btn-danger btn-sm delete-btn" data-id="' + issue.id + '">删除</button></td></tr>';
         }
         tbody.innerHTML = html;
-        updateSelectedCount(); updateSelectAllState(); bindEvents();
+        updateSelectedCount();
+        updateSelectAllState();
+        bindEvents();
     }
 
-    async function loadIssues() {
+    // ===== 加载 Issue 列表 =====
+    function loadIssues() {
         var repo = getRepo(), token = getToken();
-        if (!repo || !token) { showToast('⚠️ 请先在「系统配置」中保存仓库和 Token', true); return; }
-        loadingArea.style.display = 'block';
-        document.getElementById('tableWrap').style.display = 'none';
-        try {
-            var url = 'https://api.github.com/repos/' + repo + '/issues?state=open&per_page=100';
-            var res = await fetch(url, { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json' } });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            var data = await res.json();
-            allIssues = [];
-            for (var i = 0; i < data.length; i++) {
-                if (!data[i].pull_request) allIssues.push(data[i]);
-            }
-            filteredIssues = allIssues.slice();
-            selectedIds.clear();
-            render();
-            showToast('加载成功，共 ' + allIssues.length + ' 条', false);
-        } catch (err) { showToast('加载失败：' + err.message, true); }
-        finally { loadingArea.style.display = 'none'; document.getElementById('tableWrap').style.display = 'block'; }
+        if (!repo || !token) {
+            showToastCenter('⚠️', '请先配置仓库和 Token', '请在「系统配置」中保存');
+            return;
+        }
+        showLoading('加载数据中...');
+        var url = 'https://api.github.com/repos/' + repo + '/issues?state=open&per_page=100';
+        fetch(url, { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json' } })
+            .then(function(res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function(data) {
+                allIssues = [];
+                for (var i = 0; i < data.length; i++) {
+                    if (!data[i].pull_request) allIssues.push(data[i]);
+                }
+                filteredIssues = allIssues.slice();
+                selectedIds.clear();
+                render();
+                hideLoading();
+                showToastCenter('✅', '加载成功', '共 ' + allIssues.length + ' 条');
+            })
+            .catch(function(err) {
+                hideLoading();
+                showToastCenter('❌', '加载失败', err.message);
+            });
     }
 
     searchInput.oninput = function() {
@@ -377,7 +416,8 @@
                 if (allIssues[i].title.toLowerCase().indexOf(keyword) !== -1) filteredIssues.push(allIssues[i]);
             }
         }
-        selectedIds.clear(); render();
+        selectedIds.clear();
+        render();
     };
 
     selectAll.onchange = function() {
@@ -391,7 +431,9 @@
 
     function openEditModal(id) {
         var issue = null;
-        for (var i = 0; i < allIssues.length; i++) { if (allIssues[i].id === id) { issue = allIssues[i]; break; } }
+        for (var i = 0; i < allIssues.length; i++) {
+            if (allIssues[i].id === id) { issue = allIssues[i]; break; }
+        }
         if (!issue) return;
         var p = parseIssue(issue);
         editIssueNumber.value = issue.number;
@@ -418,15 +460,62 @@
         editModalOverlay.classList.add('active');
     }
 
-    editForm.onsubmit = async function(e) {
+    // ===== 轮询检测 Issue 是否已更新（通过重新拉取列表检测） =====
+    function pollForChanges(issueNumber, expectedName, onSuccess, onFail) {
+        var count = 0;
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(function() {
+            count++;
+            var msg = '⏳ 等待部署... (' + (count * 5) + '秒)';
+            if (editStatus.classList.contains('active')) editStatus.textContent = msg;
+            if (confirmStatus.classList.contains('active')) confirmStatus.textContent = msg;
+
+            var repo = getRepo(), token = getToken();
+            var url = 'https://api.github.com/repos/' + repo + '/issues/' + issueNumber;
+            fetch(url, { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json' } })
+                .then(function(res) {
+                    if (!res.ok) throw new Error('网络错误');
+                    return res.json();
+                })
+                .then(function(issue) {
+                    // 检测是否已关闭或标题是否匹配
+                    if (issue.state === 'closed') {
+                        // 删除成功
+                        clearInterval(pollTimer);
+                        pollTimer = null;
+                        if (onSuccess) onSuccess('deleted');
+                        return;
+                    }
+                    if (issue.title === expectedName) {
+                        // 编辑成功（标题匹配）
+                        clearInterval(pollTimer);
+                        pollTimer = null;
+                        if (onSuccess) onSuccess('updated');
+                        return;
+                    }
+                })
+                .catch(function(err) {
+                    // 忽略错误继续轮询
+                });
+
+            if (count >= MAX_POLLS) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+                if (onFail) onFail('部署超时，请稍后手动刷新');
+            }
+        }, 5000);
+    }
+
+    // ===== 编辑提交 =====
+    editForm.onsubmit = function(e) {
         e.preventDefault();
         var repo = getRepo(), token = getToken();
-        if (!repo || !token) { showToast('请先配置仓库和 Token', true); return; }
+        if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); return; }
         var name = f_name.value.trim(), idNumber = f_idNumber.value.trim();
-        if (!name || !idNumber) { showToast('姓名和身份证号不能为空', true); return; }
-        var issueNumber = editIssueNumber.value;
-        if (!issueNumber) { showToast('错误：未找到 Issue 编号', true); return; }
-        var title = name;
+        if (!name || !idNumber) { showToastCenter('⚠️', '姓名和身份证号不能为空', ''); return; }
+        var issueNumber = parseInt(editIssueNumber.value);
+        if (!issueNumber) { showToastCenter('⚠️', '错误：未找到 Issue 编号', ''); return; }
+
         var body = '标题：' + f_title.value.trim() + '\n姓名：' + name + '\n性别：' + f_gender.value + '\n身份证：' + idNumber + '\n体检单位：' + f_hospital.value.trim() + '\n体检日期：' + f_date.value + '\n一段：' + f_duan1.value.trim() + '\n二段：' + f_duan2.value.trim() + '\nA版防伪字段：' + f_afangwei.value.trim() + '\nB版健康信息：' + f_bhealth.value.trim() + '\nA版三卡显示：' + f_aCard3.value + '\nB版三卡显示：' + f_bCard3.value + '\n';
         if (f_avatar.value.trim()) body += '头像图片：' + f_avatar.value.trim() + '\n';
         body += '提交于：' + new Date().toLocaleString('zh-CN');
@@ -437,31 +526,47 @@
         editSubmitBtn.disabled = true;
         editSubmitBtn.textContent = '更新中...';
 
-        try {
-            var url = 'https://api.github.com/repos/' + repo + '/issues/' + issueNumber;
-            var res = await fetch(url, {
-                method: 'PATCH',
-                headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: title, body: body })
-            });
+        var url = 'https://api.github.com/repos/' + repo + '/issues/' + issueNumber;
+        fetch(url, {
+            method: 'PATCH',
+            headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: name, body: body })
+        })
+        .then(function(res) {
             if (!res.ok) throw new Error('更新失败 (' + res.status + ')');
             editStatus.textContent = '⏳ 已提交，等待部署...';
-            startPolling(title, function() {
-                editModalOverlay.classList.remove('active');
-                editProgress.classList.remove('active');
-                editStatus.classList.remove('active');
-                editSubmitBtn.disabled = false;
-                editSubmitBtn.textContent = '更新';
-                showToast('✅ 更新成功！', false);
-                loadIssues();
-            });
-        } catch (err) {
+
+            // 轮询检测 Issue 标题是否已更新
+            pollForChanges(
+                issueNumber,
+                name,
+                function(type) {
+                    // 成功
+                    editModalOverlay.classList.remove('active');
+                    editProgress.classList.remove('active');
+                    editStatus.classList.remove('active');
+                    editSubmitBtn.disabled = false;
+                    editSubmitBtn.textContent = '更新';
+                    showToastCenter('✅', '更新成功！', '姓名已更新为：' + name);
+                    loadIssues();
+                },
+                function(errMsg) {
+                    editProgress.classList.remove('active');
+                    editStatus.classList.remove('active');
+                    editSubmitBtn.disabled = false;
+                    editSubmitBtn.textContent = '更新';
+                    showToastCenter('⚠️', errMsg, '请手动刷新页面');
+                    loadIssues();
+                }
+            );
+        })
+        .catch(function(err) {
             editProgress.classList.remove('active');
             editStatus.classList.remove('active');
-            showToast('❌ 操作失败：' + err.message, true);
+            showToastCenter('❌', '操作失败', err.message);
             editSubmitBtn.disabled = false;
             editSubmitBtn.textContent = '更新';
-        }
+        });
     };
 
     function closeEditModal() {
@@ -473,9 +578,12 @@
     editModalCloseBtn.onclick = closeEditModal;
     editModalOverlay.onclick = function(e) { if (e.target === this) closeEditModal(); };
 
+    // ===== 确认删除（单条） =====
     function confirmDelete(id) {
         var issue = null;
-        for (var i = 0; i < allIssues.length; i++) { if (allIssues[i].id === id) { issue = allIssues[i]; break; } }
+        for (var i = 0; i < allIssues.length; i++) {
+            if (allIssues[i].id === id) { issue = allIssues[i]; break; }
+        }
         if (!issue) return;
         confirmTitle.textContent = '确认删除';
         confirmMessage.textContent = '确定要删除「' + issue.title + '」吗？此操作将关闭 Issue。';
@@ -489,8 +597,9 @@
         confirmModalOverlay.classList.add('active');
     }
 
+    // ===== 批量删除 =====
     batchDeleteBtn.onclick = function() {
-        if (selectedIds.size === 0) { alert('请先选择要删除的数据'); return; }
+        if (selectedIds.size === 0) { showToastCenter('⚠️', '请先选择要删除的数据', ''); return; }
         confirmTitle.textContent = '确认批量删除';
         confirmMessage.textContent = '确定要删除选中的 ' + selectedIds.size + ' 条数据吗？';
         confirmActions.style.display = 'flex';
@@ -503,45 +612,55 @@
         confirmModalOverlay.classList.add('active');
     };
 
-    async function doDelete(issue) {
+    // ===== 执行单条删除 =====
+    function doDelete(issue) {
         var repo = getRepo(), token = getToken();
-        if (!repo || !token) { showToast('请先配置仓库和 Token', true); confirmModalOverlay.classList.remove('active'); return; }
+        if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); confirmModalOverlay.classList.remove('active'); return; }
         confirmActions.style.display = 'none';
         confirmProgress.classList.add('active');
         confirmStatus.classList.add('active');
         confirmStatus.textContent = '⏳ 正在删除并等待部署...';
-        try {
-            var url = 'https://api.github.com/repos/' + repo + '/issues/' + issue.number;
-            var res = await fetch(url, {
-                method: 'PATCH',
-                headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ state: 'closed' })
-            });
+        var url = 'https://api.github.com/repos/' + repo + '/issues/' + issue.number;
+        fetch(url, {
+            method: 'PATCH',
+            headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: 'closed' })
+        })
+        .then(function(res) {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             confirmStatus.textContent = '⏳ 已提交删除，等待部署...';
-            var count = 0;
-            var waitTimer = setInterval(function() {
-                count++;
-                confirmStatus.textContent = '⏳ 等待部署... (' + (count * 5) + '秒)';
-                if (count >= 6) {
-                    clearInterval(waitTimer);
+
+            pollForChanges(
+                issue.number,
+                null,
+                function(type) {
                     confirmModalOverlay.classList.remove('active');
-                    showToast('✅ 删除成功！', false);
+                    showToastCenter('✅', '删除成功！', '已关闭：' + issue.title);
+                    loadIssues();
+                },
+                function(errMsg) {
+                    confirmProgress.classList.remove('active');
+                    confirmStatus.classList.remove('active');
+                    confirmActions.style.display = 'flex';
+                    showToastCenter('⚠️', errMsg, '请手动刷新页面');
+                    confirmModalOverlay.classList.remove('active');
                     loadIssues();
                 }
-            }, 5000);
-        } catch (err) {
+            );
+        })
+        .catch(function(err) {
             confirmProgress.classList.remove('active');
             confirmStatus.classList.remove('active');
             confirmActions.style.display = 'flex';
-            showToast('❌ 删除失败：' + err.message, true);
+            showToastCenter('❌', '删除失败', err.message);
             confirmModalOverlay.classList.remove('active');
-        }
+        });
     }
 
-    async function doBatchDelete() {
+    // ===== 执行批量删除 =====
+    function doBatchDelete() {
         var repo = getRepo(), token = getToken();
-        if (!repo || !token) { showToast('请先配置仓库和 Token', true); confirmModalOverlay.classList.remove('active'); return; }
+        if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); confirmModalOverlay.classList.remove('active'); return; }
         var ids = Array.from(selectedIds);
         var toDelete = [];
         for (var i = 0; i < allIssues.length; i++) {
@@ -551,57 +670,83 @@
         confirmProgress.classList.add('active');
         confirmStatus.classList.add('active');
         confirmStatus.textContent = '⏳ 正在批量删除 ' + toDelete.length + ' 条并等待部署...';
-        try {
-            for (var j = 0; j < toDelete.length; j++) {
-                var url = 'https://api.github.com/repos/' + repo + '/issues/' + toDelete[j].number;
-                await fetch(url, {
+
+        var promises = [];
+        for (var j = 0; j < toDelete.length; j++) {
+            var url = 'https://api.github.com/repos/' + repo + '/issues/' + toDelete[j].number;
+            promises.push(
+                fetch(url, {
                     method: 'PATCH',
                     headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ state: 'closed' })
-                });
-            }
-            var count = 0;
-            var waitTimer = setInterval(function() {
-                count++;
-                confirmStatus.textContent = '⏳ 等待部署... (' + (count * 5) + '秒)';
-                if (count >= 6) {
-                    clearInterval(waitTimer);
-                    confirmModalOverlay.classList.remove('active');
-                    showToast('✅ 已删除 ' + toDelete.length + ' 条！', false);
-                    loadIssues();
-                }
-            }, 5000);
-        } catch (err) {
-            confirmProgress.classList.remove('active');
-            confirmStatus.classList.remove('active');
-            confirmActions.style.display = 'flex';
-            showToast('❌ 批量删除失败：' + err.message, true);
-            confirmModalOverlay.classList.remove('active');
+                })
+            );
         }
+        Promise.all(promises)
+            .then(function() {
+                confirmStatus.textContent = '⏳ 已提交删除，等待部署...';
+                // 检测第一个是否已关闭
+                pollForChanges(
+                    toDelete[0].number,
+                    null,
+                    function(type) {
+                        confirmModalOverlay.classList.remove('active');
+                        showToastCenter('✅', '批量删除成功！', '已删除 ' + toDelete.length + ' 条');
+                        loadIssues();
+                    },
+                    function(errMsg) {
+                        confirmProgress.classList.remove('active');
+                        confirmStatus.classList.remove('active');
+                        confirmActions.style.display = 'flex';
+                        showToastCenter('⚠️', errMsg, '请手动刷新页面');
+                        confirmModalOverlay.classList.remove('active');
+                        loadIssues();
+                    }
+                );
+            })
+            .catch(function(err) {
+                confirmProgress.classList.remove('active');
+                confirmStatus.classList.remove('active');
+                confirmActions.style.display = 'flex';
+                showToastCenter('❌', '批量删除失败', err.message);
+                confirmModalOverlay.classList.remove('active');
+            });
     }
 
     confirmCancelBtn.onclick = function() { confirmModalOverlay.classList.remove('active'); };
     confirmModalOverlay.onclick = function(e) { if (e.target === this) { confirmModalOverlay.classList.remove('active'); if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } } };
 
+    // ===== 头像上传 =====
     editFileBtn.onclick = function() { editAvatarFile.click(); };
     editAvatarFile.onchange = function() { editFileName.textContent = this.files && this.files.length > 0 ? this.files[0].name : '未选择'; };
-    editUploadBtn.onclick = async function() {
+    editUploadBtn.onclick = function() {
         var file = editAvatarFile.files[0];
         if (!file) { editUploadStatus.textContent = '请选择文件'; editUploadStatus.style.color = '#b33636'; return; }
         var imgbbKey = getImgbbKey();
         if (!imgbbKey) { editUploadStatus.textContent = '请先保存 Imgbb Key'; editUploadStatus.style.color = '#b33636'; return; }
         editUploadStatus.textContent = '上传中...';
         editUploadStatus.style.color = '#2b6ef0';
-        var fd = new FormData(); fd.append('key', imgbbKey); fd.append('image', file);
-        try {
-            var res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
-            var data = await res.json();
-            if (data.success) {
-                var url = data.data.url;
-                f_avatar.value = url; editAvatarPreview.src = url; editAvatarPreview.style.display = 'block';
-                editUploadStatus.textContent = '成功！'; editUploadStatus.style.color = '#0d6832';
-            } else throw new Error(data.error ? data.error.message : '失败');
-        } catch (err) { editUploadStatus.textContent = '❌ ' + err.message; editUploadStatus.style.color = '#b33636'; }
+        var fd = new FormData();
+        fd.append('key', imgbbKey);
+        fd.append('image', file);
+        fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var url = data.data.url;
+                    f_avatar.value = url;
+                    editAvatarPreview.src = url;
+                    editAvatarPreview.style.display = 'block';
+                    editUploadStatus.textContent = '成功！';
+                    editUploadStatus.style.color = '#0d6832';
+                } else {
+                    throw new Error(data.error ? data.error.message : '失败');
+                }
+            })
+            .catch(function(err) {
+                editUploadStatus.textContent = '❌ ' + err.message;
+                editUploadStatus.style.color = '#b33636';
+            });
     };
     f_avatar.oninput = function() {
         if (this.value.trim()) { editAvatarPreview.src = this.value.trim(); editAvatarPreview.style.display = 'block'; }
@@ -609,10 +754,14 @@
     };
 
     refreshBtn.onclick = loadIssues;
-    if (!getRepo() || !getToken()) { showToast('⚠️ 请先在「系统配置」中保存仓库路径和 Token', true); }
-    loadIssues();
+
     var today = new Date().toISOString().split('T')[0];
     if (f_date) f_date.value = today;
+
+    if (!getRepo() || !getToken()) {
+        showToastCenter('⚠️', '请先配置仓库和 Token', '请在「系统配置」中保存');
+    }
+    loadIssues();
 })();
 </script>
 </body>
