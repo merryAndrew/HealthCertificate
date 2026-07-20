@@ -43,7 +43,7 @@
 <body>
     <div id="notFoundMessage" class="not-found" style="display: none;">未找到该健康证</div>
     
-        <div class="cert-wrapper" data-title="潘启杰">
+        <div class="cert-wrapper" data-title="潘启杰" data-issue="10" data-version="2026-07-19T11:03:16Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -97,7 +97,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="测试01">
+        <div class="cert-wrapper" data-title="测试01" data-issue="11" data-version="2026-07-20T18:28:01Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -151,7 +151,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="胡">
+        <div class="cert-wrapper" data-title="胡" data-issue="12" data-version="2026-07-20T18:51:24Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -205,7 +205,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="潘启宁">
+        <div class="cert-wrapper" data-title="潘启宁" data-issue="13" data-version="2026-07-19T11:22:29Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -259,7 +259,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="芙宁娜">
+        <div class="cert-wrapper" data-title="芙宁娜" data-issue="14" data-version="2026-07-19T13:06:38Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -313,7 +313,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="ppp">
+        <div class="cert-wrapper" data-title="ppp" data-issue="15" data-version="2026-07-20T18:03:20Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -367,7 +367,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="罗一顺">
+        <div class="cert-wrapper" data-title="罗一顺" data-issue="17" data-version="2026-07-20T09:03:58Z">
             <div class="cert-module top-card">
                 <div class="top-title">c尼玛</div>
                 <div class="top-content">
@@ -412,7 +412,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="测试3">
+        <div class="cert-wrapper" data-title="测试3" data-issue="20" data-version="2026-07-20T19:11:49Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明0</div>
                 <div class="top-content">
@@ -466,7 +466,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="测9">
+        <div class="cert-wrapper" data-title="测9" data-issue="21" data-version="2026-07-20T17:58:03Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -520,7 +520,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="ff">
+        <div class="cert-wrapper" data-title="ff" data-issue="22" data-version="2026-07-20T17:48:26Z">
             <div class="cert-module top-card">
                 <div class="top-title">标题</div>
                 <div class="top-content">
@@ -574,7 +574,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="黄明雄">
+        <div class="cert-wrapper" data-title="黄明雄" data-issue="23" data-version="2026-07-20T10:22:49Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -628,7 +628,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="ooo">
+        <div class="cert-wrapper" data-title="ooo" data-issue="24" data-version="2026-07-20T18:38:02Z">
             <div class="cert-module top-card">
                 <div class="top-title">测试标题</div>
                 <div class="top-content">
@@ -682,7 +682,7 @@
             
         </div>
         
-        <div class="cert-wrapper" data-title="测试5">
+        <div class="cert-wrapper" data-title="测试5" data-issue="25" data-version="2026-07-20T18:46:29Z">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -744,14 +744,12 @@
             const wrappers = document.querySelectorAll('.cert-wrapper');
             const notFound = document.getElementById('notFoundMessage');
             
-            // 超级管理员：admin=0000 显示全部
             if (admin === '0000') {
                 wrappers.forEach(w => w.style.display = 'block');
                 notFound.style.display = 'none';
                 return;
             }
             
-            // 有 id 参数：按 id 过滤
             if (id) {
                 let decodedId = '';
                 try { decodedId = decodeURIComponent(id); } catch(e) { decodedId = id; }
@@ -773,7 +771,6 @@
                 return;
             }
             
-            // 没有 id 且不是管理员：显示"未找到"
             wrappers.forEach(w => w.style.display = 'none');
             notFound.style.display = 'block';
         })();
