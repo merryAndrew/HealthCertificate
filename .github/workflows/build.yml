@@ -4,6 +4,10 @@ on:
   issues:
     types: [opened, edited, closed]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
   issues: read
