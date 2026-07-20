@@ -12,7 +12,8 @@ TOKEN = os.getenv('GITHUB_TOKEN')
 USER = REPO.split('/')[0] if REPO else 'merryAndrew'
 REPO_NAME = REPO.split('/')[1] if REPO and '/' in REPO else 'HealthCertificate'
 
-url = f'https://api.github.com/repos/{REPO}/issues?state=all&per_page=100'
+# 只获取未关闭的 Issue（open）
+url = f'https://api.github.com/repos/{REPO}/issues?state=open&per_page=100'
 headers = {'Authorization': f'token {TOKEN}', 'Accept': 'application/vnd.github.v3+json'}
 issues = requests.get(url, headers=headers).json()
 
@@ -79,13 +80,6 @@ def build_card(issue, style='A'):
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-    # 检测卡片是否被标记为删除
-    deleted_match = re.search(r'删除卡片[：:]\s*(.+)', all_text)
-    is_deleted = deleted_match.group(1).strip() if deleted_match else '否'
-
-    if is_deleted == '是':
-        return ''
-
     if style == 'A':
         return f'''
         <div class="cert-wrapper" data-title="{title}" data-issue-number="{issue['number']}">
@@ -150,16 +144,17 @@ def build_card(issue, style='A'):
         </div>
         '''
     else:
-        # B版
+        # B版 – 所有卡片独立编辑
         return f'''
-        <div class="cert-wrapper" data-title="{title}" data-body="{body}" data-issue-number="{issue['number']}" style="position: relative;">
-            <!-- 编辑按钮 -->
+        <div class="cert-wrapper" data-title="{title}" data-issue-number="{issue['number']}" style="position: relative;">
+            <!-- 按钮组 -->
             <button id="editBtn_{issue['number']}" class="edit-btn" style="display: none; position: absolute; bottom: 12px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
             <button id="saveBtn_{issue['number']}" class="save-btn" style="display: none; position: absolute; bottom: 12px; right: 100px; background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">保存</button>
             <button id="deleteBtn_{issue['number']}" class="delete-btn" style="display: none; position: absolute; bottom: 12px; right: 190px; background: #e53e3e; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">删除</button>
             <div id="editStatus_{issue['number']}" style="display: none; position: absolute; bottom: 52px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20;"></div>
             
             <div class="cert-module top-card">
+                <!-- 标题可编辑 -->
                 <div class="top-title" id="title_{issue['number']}">广东省食品从业人员健康证明</div>
                 <div class="top-content">
                     <div class="text-container">
@@ -217,16 +212,13 @@ cards_B = []
 for issue in issues:
     if 'pull_request' in issue:
         continue
-    card_A = build_card(issue, 'A')
-    card_B = build_card(issue, 'B')
-    if card_A:
-        cards_A.append(card_A)
-    if card_B:
-        cards_B.append(card_B)
+    cards_A.append(build_card(issue, 'A'))
+    cards_B.append(build_card(issue, 'B'))
 
-# 反向排序
-cards_A.reverse()
-cards_B.reverse()
+# 不反转，保持创建顺序（最新的在下面）
+# 如果需要最新在上，可以取消注释下一行
+# cards_A.reverse()
+# cards_B.reverse()
 
 html_B = f'''<!DOCTYPE html>
 <html lang="zh-CN">
@@ -286,7 +278,7 @@ html_B = f'''<!DOCTYPE html>
             
             if (!isEditor) return;
             
-            // 显示所有编辑和删除按钮
+            // 显示所有卡片的编辑和删除按钮
             document.querySelectorAll('.edit-btn').forEach(btn => btn.style.display = 'inline-block');
             document.querySelectorAll('.delete-btn').forEach(btn => btn.style.display = 'inline-block');
             
@@ -306,13 +298,14 @@ html_B = f'''<!DOCTYPE html>
                 if (!titleEl || !nameEl || !genderEl || !idEl || !dateEl || !saveBtn) return;
                 
                 btn.addEventListener('click', function() {{
+                    // 所有字段变为可编辑（标题 + 内容）
                     [titleEl, nameEl, genderEl, idEl, dateEl].forEach(el => {{
                         if (el) {{
                             el.contentEditable = true;
                             el.classList.add('editable-field');
                         }}
                     }});
-                    // 性别改为下拉
+                    // 性别改为下拉选择
                     if (genderEl) {{
                         const currentGender = genderEl.textContent.trim();
                         genderEl.contentEditable = false;
@@ -341,7 +334,10 @@ html_B = f'''<!DOCTYPE html>
                     const newId = idEl ? idEl.textContent.trim() : '';
                     const newDate = dateEl ? dateEl.textContent.trim() : '';
                     
-                    let body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}`;
+                    // 注意：标题作为 Issue 标题，正文只存其他字段
+                    // 这里用新标题更新 Issue 标题，正文存其他字段
+                    const newTitleField = newTitle;
+                    const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}`;
                     
                     let token = localStorage.getItem('github_token');
                     if (!token) {{
@@ -367,7 +363,10 @@ html_B = f'''<!DOCTYPE html>
                             'Accept': 'application/vnd.github.v3+json',
                             'Content-Type': 'application/json',
                         }},
-                        body: JSON.stringify({{ body: body }})
+                        body: JSON.stringify({{
+                            title: newTitleField,
+                            body: body
+                        }})
                     }})
                     .then(res => {{
                         if (!res.ok) throw new Error('保存失败: ' + res.status);
@@ -376,6 +375,7 @@ html_B = f'''<!DOCTYPE html>
                     .then(() => {{
                         editStatus.textContent = '✅ 保存成功！正在重新生成...';
                         editStatus.style.color = '#2f9e44';
+                        // 恢复只读
                         [titleEl, nameEl, idEl, dateEl].forEach(el => {{
                             if (el) {{
                                 el.contentEditable = false;
@@ -402,7 +402,7 @@ html_B = f'''<!DOCTYPE html>
                 }});
             }});
             
-            // ===== 删除卡片功能 =====
+            // ===== 删除卡片功能（关闭 Issue） =====
             document.querySelectorAll('.delete-btn').forEach(btn => {{
                 const wrapper = btn.closest('.cert-wrapper');
                 const issueNumber = wrapper.dataset.issueNumber;
@@ -428,7 +428,6 @@ html_B = f'''<!DOCTYPE html>
                         return;
                     }}
                     
-                    const body = `删除卡片：是`;
                     const repo = 'merryAndrew/HealthCertificate';
                     const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
                     
@@ -438,6 +437,7 @@ html_B = f'''<!DOCTYPE html>
                         editStatus.style.display = 'block';
                     }}
                     
+                    // 关闭 Issue
                     fetch(url, {{
                         method: 'PATCH',
                         headers: {{
@@ -445,7 +445,7 @@ html_B = f'''<!DOCTYPE html>
                             'Accept': 'application/vnd.github.v3+json',
                             'Content-Type': 'application/json',
                         }},
-                        body: JSON.stringify({{ body: body }})
+                        body: JSON.stringify({{ state: 'closed' }})
                     }})
                     .then(res => {{
                         if (!res.ok) throw new Error('删除失败: ' + res.status);
@@ -453,14 +453,14 @@ html_B = f'''<!DOCTYPE html>
                     }})
                     .then(() => {{
                         if (editStatus) {{
-                            editStatus.textContent = '✅ 删除成功！正在重新生成...';
+                            editStatus.textContent = '✅ 删除成功！正在刷新...';
                             editStatus.style.color = '#2f9e44';
                         }}
-                        // 直接隐藏卡片
+                        // 隐藏卡片
                         wrapper.style.display = 'none';
                         setTimeout(() => {{
                             location.reload();
-                        }}, 2000);
+                        }}, 1500);
                     }})
                     .catch(err => {{
                         if (editStatus) {{
