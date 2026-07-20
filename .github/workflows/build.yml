@@ -3,6 +3,7 @@ name: 自动生成健康证
 on:
   issues:
     types: [opened, edited, closed]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
