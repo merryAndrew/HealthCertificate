@@ -44,7 +44,8 @@ def format_date(raw_date):
     return raw_date
 
 def build_card(issue, style='A'):
-    title = issue['title']
+    # Issue 标题单独存储为"卡片标题"，不再与姓名混淆
+    card_title = issue['title']
     body = issue['body'] or ''
     comments_url = issue['comments_url']
     comments = requests.get(comments_url, headers=headers).json()
@@ -52,7 +53,9 @@ def build_card(issue, style='A'):
     for comment in comments:
         all_text += ' ' + comment.get('body', '')
 
-    name = title
+    # 从正文提取姓名（独立于标题）
+    name_match = re.search(r'姓名[：:]\s*(.+)', all_text)
+    name = name_match.group(1).strip() if name_match else card_title
 
     gender_match = re.search(r'性别[：:]\s*(.+)', all_text)
     gender = gender_match.group(1).strip() if gender_match else '男'
@@ -67,24 +70,21 @@ def build_card(issue, style='A'):
     else:
         date_display = '未选择日期 (有效期一年)'
 
-    # 体检单位（可编辑）
     hospital_match = re.search(r'体检单位[：:]\s*(.+)', all_text)
     hospital = hospital_match.group(1).strip() if hospital_match else '广州东仁医院'
 
-    # 中间文字（可编辑）
     middle_text_match = re.search(r'中间文字[：:]\s*(.+)', all_text)
     middle_text = middle_text_match.group(1).strip() if middle_text_match else '广东省食品从业人员'
 
-    # 底部文字（可编辑）
     bottom_text_match = re.search(r'底部文字[：:]\s*(.+)', all_text)
     bottom_text = bottom_text_match.group(1).strip() if bottom_text_match else '此健康信息已上报平台'
 
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
-    print(f"📸 标题 '{title}' 的图片链接: {img_url}")
+    print(f"📸 标题 '{card_title}' 的图片链接: {img_url}")
 
-    encoded_title = urllib.parse.quote(title)
+    encoded_title = urllib.parse.quote(card_title)
     page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
@@ -93,7 +93,7 @@ def build_card(issue, style='A'):
 
     if style == 'A':
         return f'''
-        <div class="cert-wrapper" data-title="{title}" data-issue-number="{issue['number']}">
+        <div class="cert-wrapper" data-title="{card_title}" data-issue-number="{issue['number']}">
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -156,10 +156,9 @@ def build_card(issue, style='A'):
         '''
     else:
         return f'''
-        <div class="cert-wrapper" data-title="{title}" data-issue-number="{issue['number']}" style="position: relative; padding-bottom: 70px;">
-            <!-- 复选框（管理员可见） -->
+        <div class="cert-wrapper" data-title="{card_title}" data-issue-number="{issue['number']}" style="position: relative; padding-bottom: 70px;">
             <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
-                <input type="checkbox" class="card-select" data-issue="{issue['number']}" data-title="{title}" />
+                <input type="checkbox" class="card-select" data-issue="{issue['number']}" data-title="{card_title}" />
             </div>
 
             <div class="cert-module top-card">
@@ -213,7 +212,6 @@ def build_card(issue, style='A'):
                 </div>
             </div>
 
-            <!-- 按钮组 -->
             <div class="button-group" id="buttonGroup_{issue['number']}" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
                 <button class="edit-btn" id="editBtn_{issue['number']}" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
                 <button class="save-btn" id="saveBtn_{issue['number']}" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
@@ -364,11 +362,64 @@ html_B = f'''<!DOCTYPE html>
         }}
         .edit-status.error {{ color: #e53e3e; }}
         .edit-status.success {{ color: #2f9e44; }}
+        .delete-dialog {{
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }}
+        .delete-dialog-box {{
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }}
+        .delete-dialog-box h3 {{
+            margin-bottom: 16px;
+            font-size: 18px;
+        }}
+        .delete-dialog-box .card-item {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }}
+        .delete-dialog-box .card-item input[type="checkbox"] {{
+            width: 18px;
+            height: 18px;
+        }}
+        .delete-dialog-box .btn-row {{
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }}
+        .delete-dialog-box .btn-row button {{
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }}
+        .delete-dialog-box .btn-confirm {{
+            background: #e53e3e;
+            color: #fff;
+        }}
+        .delete-dialog-box .btn-cancel-dialog {{
+            background: #e8ecf2;
+            color: #333;
+        }}
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- 管理员栏（仅管理员可见） -->
         <div id="adminBar" style="display: none;" class="admin-bar">
             <input type="text" id="searchInput" placeholder="🔍 搜索姓名..." />
             <div class="checkbox-container">
@@ -379,12 +430,10 @@ html_B = f'''<!DOCTYPE html>
             <span class="badge" id="batchStatus"></span>
         </div>
         
-        <!-- 卡片列表 -->
         <div id="cardsContainer">
             {''.join(cards_B)}
         </div>
         
-        <!-- 未找到提示 -->
         <div id="notFoundMessage" class="not-found" style="display: none;">未找到该健康证</div>
     </div>
     
@@ -403,12 +452,10 @@ html_B = f'''<!DOCTYPE html>
             const batchDeleteBtn = document.getElementById('batchDeleteBtn');
             const batchStatus = document.getElementById('batchStatus');
             
-            // ===== 管理员模式：显示管理栏，列出所有卡片 =====
+            // ===== 管理员模式 =====
             if (isAdmin) {{
                 adminBar.style.display = 'flex';
-                // 显示复选框
                 document.querySelectorAll('.card-checkbox').forEach(cb => cb.style.display = 'block');
-                // 显示所有卡片（如果带 id 则过滤）
                 if (idParam) {{
                     let decodedId = '';
                     try {{ decodedId = decodeURIComponent(idParam); }} catch(e) {{ decodedId = idParam; }}
@@ -431,7 +478,6 @@ html_B = f'''<!DOCTYPE html>
                     notFound.style.display = 'none';
                 }}
             }} else {{
-                // 非管理员模式
                 if (idParam) {{
                     let decodedId = '';
                     try {{ decodedId = decodeURIComponent(idParam); }} catch(e) {{ decodedId = idParam; }}
@@ -455,10 +501,9 @@ html_B = f'''<!DOCTYPE html>
                 }}
             }}
             
-            // ===== 管理员专属功能 =====
             if (!isAdmin) return;
             
-            // 搜索过滤
+            // ===== 搜索 =====
             if (searchInput) {{
                 searchInput.addEventListener('input', function() {{
                     const keyword = this.value.trim().toLowerCase();
@@ -469,7 +514,7 @@ html_B = f'''<!DOCTYPE html>
                 }});
             }}
             
-            // 全选/取消全选
+            // ===== 全选 =====
             if (selectAll) {{
                 selectAll.addEventListener('change', function() {{
                     const checked = this.checked;
@@ -491,7 +536,7 @@ html_B = f'''<!DOCTYPE html>
                 batchStatus.textContent = checked.length > 0 ? `已选 ${{checked.length}} 张` : '';
             }}
             
-            // 批量删除
+            // ===== 批量删除 - 弹窗选择 =====
             if (batchDeleteBtn) {{
                 batchDeleteBtn.addEventListener('click', function() {{
                     const checked = document.querySelectorAll('.card-select:checked');
@@ -499,7 +544,52 @@ html_B = f'''<!DOCTYPE html>
                         alert('请至少选择一张卡片');
                         return;
                     }}
-                    if (!confirm(`确定要删除选中的 ${{checked.length}} 张卡片吗？此操作不可恢复！`)) return;
+                    // 显示删除弹窗
+                    showDeleteDialog(checked);
+                }});
+            }}
+            
+            function showDeleteDialog(checkedItems) {{
+                // 构建弹窗
+                const dialog = document.createElement('div');
+                dialog.className = 'delete-dialog';
+                let html = `<div class="delete-dialog-box">
+                    <h3>选择要删除的卡片</h3>`;
+                checkedItems.forEach(cb => {{
+                    const title = cb.dataset.title || '未命名';
+                    html += `<div class="card-item">
+                        <input type="checkbox" class="delete-card-select" data-issue="${{cb.dataset.issue}}" checked />
+                        <span>${{title}}</span>
+                    </div>`;
+                }});
+                html += `<div class="card-item" style="border-bottom: none;">
+                        <input type="checkbox" id="deleteSelectAll" checked />
+                        <label for="deleteSelectAll">全选</label>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-cancel-dialog" onclick="this.closest('.delete-dialog').remove()">取消</button>
+                        <button class="btn-confirm" id="confirmDeleteBtn">确认删除</button>
+                    </div>
+                </div>`;
+                dialog.innerHTML = html;
+                document.body.appendChild(dialog);
+                
+                // 弹窗内全选
+                const delSelectAll = dialog.querySelector('#deleteSelectAll');
+                if (delSelectAll) {{
+                    delSelectAll.addEventListener('change', function() {{
+                        dialog.querySelectorAll('.delete-card-select').forEach(cb => cb.checked = this.checked);
+                    }});
+                }}
+                
+                // 确认删除
+                dialog.querySelector('#confirmDeleteBtn').addEventListener('click', function() {{
+                    const selected = dialog.querySelectorAll('.delete-card-select:checked');
+                    if (selected.length === 0) {{
+                        alert('请至少选择一张卡片');
+                        return;
+                    }}
+                    if (!confirm(`确定要删除选中的 ${{selected.length}} 张卡片吗？此操作不可恢复！`)) return;
                     
                     let token = localStorage.getItem('github_token');
                     if (!token) {{
@@ -515,13 +605,14 @@ html_B = f'''<!DOCTYPE html>
                     batchDeleteBtn.disabled = true;
                     batchStatus.textContent = '⏳ 删除中...';
                     batchStatus.style.color = '#2b6ef0';
+                    dialog.remove();
                     
                     const repo = 'merryAndrew/HealthCertificate';
                     let completed = 0;
                     let failed = 0;
-                    const total = checked.length;
+                    const total = selected.length;
                     
-                    checked.forEach(cb => {{
+                    selected.forEach(cb => {{
                         const issueNumber = cb.dataset.issue;
                         const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
                         fetch(url, {{
@@ -550,7 +641,7 @@ html_B = f'''<!DOCTYPE html>
                 }});
             }}
             
-            // ===== 单张卡片编辑功能 =====
+            // ===== 单张卡片编辑 =====
             document.querySelectorAll('.edit-btn').forEach(btn => {{
                 const wrapper = btn.closest('.cert-wrapper');
                 const issueNumber = wrapper.dataset.issueNumber;
@@ -566,12 +657,9 @@ html_B = f'''<!DOCTYPE html>
                 const cancelBtn = document.getElementById('cancelBtn_' + issueNumber);
                 const editStatus = document.getElementById('editStatus_' + issueNumber);
                 
-                // 进入编辑状态
                 btn.addEventListener('click', function() {{
-                    // 切换编辑状态
                     const isEditing = btn.textContent === '取消编辑';
                     if (isEditing) {{
-                        // 退出编辑状态
                         btn.textContent = '编辑';
                         saveBtn.style.display = 'none';
                         cancelBtn.style.display = 'none';
@@ -581,7 +669,6 @@ html_B = f'''<!DOCTYPE html>
                                 el.classList.remove('editable-field');
                             }}
                         }});
-                        // 恢复性别下拉为文本
                         if (genderEl) {{
                             const select = genderEl.querySelector('.gender-select');
                             if (select) {{
@@ -592,7 +679,6 @@ html_B = f'''<!DOCTYPE html>
                         return;
                     }}
                     
-                    // 进入编辑状态
                     btn.textContent = '取消编辑';
                     saveBtn.style.display = 'inline-block';
                     cancelBtn.style.display = 'inline-block';
@@ -602,7 +688,6 @@ html_B = f'''<!DOCTYPE html>
                             el.classList.add('editable-field');
                         }}
                     }});
-                    // 性别改为下拉
                     if (genderEl) {{
                         const currentGender = genderEl.textContent.trim();
                         genderEl.contentEditable = false;
@@ -616,14 +701,12 @@ html_B = f'''<!DOCTYPE html>
                     editStatus.style.display = 'block';
                 }});
                 
-                // 取消编辑
                 if (cancelBtn) {{
                     cancelBtn.addEventListener('click', function() {{
                         location.reload();
                     }});
                 }}
                 
-                // 保存编辑
                 if (saveBtn) {{
                     saveBtn.addEventListener('click', function() {{
                         const newTitle = titleEl ? titleEl.textContent.trim() : '广东省食品从业人员健康证明';
@@ -641,6 +724,13 @@ html_B = f'''<!DOCTYPE html>
                         const newMiddle = middleTextEl ? middleTextEl.textContent.trim() : '广东省食品从业人员';
                         const newBottom = bottomTextEl ? bottomTextEl.textContent.trim() : '此健康信息已上报平台';
                         
+                        // 获取当前 Issue 的原有头像图片
+                        const imgUrl = wrapper.querySelector('.photo img')?.src || '';
+                        let avatarField = '';
+                        if (imgUrl && !imgUrl.includes('placeholder')) {{
+                            avatarField = `\\n头像图片：${{imgUrl}}`;
+                        }}
+                        
                         let token = localStorage.getItem('github_token');
                         if (!token) {{
                             token = prompt('请输入您的 GitHub Token（编辑需要）:');
@@ -654,7 +744,7 @@ html_B = f'''<!DOCTYPE html>
                         
                         const repo = 'merryAndrew/HealthCertificate';
                         const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
-                        const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检单位：${{newHospital}}\\n体检日期：${{newDate}}\\n中间文字：${{newMiddle}}\\n底部文字：${{newBottom}}`;
+                        const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检单位：${{newHospital}}\\n体检日期：${{newDate}}\\n中间文字：${{newMiddle}}\\n底部文字：${{newBottom}}${{avatarField}}`;
                         
                         editStatus.textContent = '⏳ 保存中...';
                         editStatus.className = 'edit-status';
@@ -675,7 +765,6 @@ html_B = f'''<!DOCTYPE html>
                         .then(() => {{
                             editStatus.textContent = '✅ 保存成功！正在重新生成...';
                             editStatus.className = 'edit-status success';
-                            // 恢复只读
                             [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {{
                                 if (el) {{
                                     el.contentEditable = false;
@@ -685,7 +774,6 @@ html_B = f'''<!DOCTYPE html>
                             if (genderSelect) {{
                                 genderEl.innerHTML = genderSelect.value;
                             }}
-                            // 恢复按钮状态
                             btn.textContent = '编辑';
                             saveBtn.style.display = 'none';
                             cancelBtn.style.display = 'none';
