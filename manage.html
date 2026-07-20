@@ -21,6 +21,8 @@
         .btn-outline { background: transparent; border: 1px solid #d0d7de; }
         .btn-outline:hover { background: #f6f8fa; }
         .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-close-fail { background: #6b7a8f; color: #fff; padding: 6px 20px; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; }
+        .btn-close-fail:hover { background: #4a5a6e; }
         .search-bar { position: sticky; top: 0; z-index: 10; background: #fff; padding: 12px 0; margin-bottom: 16px; border-bottom: 2px solid #f0f2f5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .search-bar input { flex: 1; min-width: 200px; padding: 10px 14px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 15px; outline: none; }
         .search-bar input:focus { border-color: #1a2332; box-shadow: 0 0 0 3px rgba(26,35,50,0.12); }
@@ -35,7 +37,7 @@
         .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
         .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
 
-        /* ===== Toast — 强制居中 ===== */
+        /* Toast 居中 */
         .toast-center { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 3000; justify-content: center; align-items: center; }
         .toast-center.active { display: flex; }
         .toast-center .toast-box { background: #fff; border-radius: 16px; padding: 30px 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; max-width: 400px; width: 90%; }
@@ -44,14 +46,14 @@
         .toast-center .toast-box .sub { font-size: 14px; color: #6b7a8f; margin-top: 6px; }
         .toast-center .toast-box .btn-close-toast { margin-top: 20px; padding: 8px 32px; background: #1a2332; color: #fff; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; }
 
-        /* ===== 加载动画 — 强制居中 ===== */
+        /* 加载动画居中 */
         .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
         .loading-overlay.active { display: flex; }
         .loading-overlay .spinner { width: 48px; height: 48px; border: 4px solid #e8ecf2; border-top: 4px solid #1a2332; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
         .loading-overlay .loading-text { font-size: 16px; color: #1a2332; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
 
-        /* ===== 模态框强制居中 ===== */
+        /* 模态框 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
         .modal-overlay.active { display: block; }
         .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 16px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 28px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -68,16 +70,27 @@
         @keyframes progressAnim { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
         .modal-status { display: none; text-align: center; font-size: 13px; color: #6b7a8f; margin-top: 8px; }
         .modal-status.active { display: block; }
+        .modal-status.error { color: #cf222e; }
+        .modal-status.success { color: #1f883d; }
         .modal-box .btn-submit-modal { width: 100%; padding: 14px; font-size: 17px; font-weight: 600; background: #1a2332; color: #fff; border: none; border-radius: 40px; cursor: pointer; margin-top: 10px; }
         .modal-box .btn-submit-modal:disabled { opacity: 0.5; }
+        .modal-box .btn-submit-modal.hidden { display: none; }
+        .modal-box .fail-actions { display: none; justify-content: center; margin-top: 16px; gap: 12px; }
+        .modal-box .fail-actions.active { display: flex; }
         .confirm-box .confirm-actions { display: flex; gap: 12px; margin-top: 20px; justify-content: center; }
         .confirm-box .confirm-actions .btn { padding: 10px 30px; font-size: 15px; }
+        .confirm-box .confirm-actions.hidden { display: none; }
         .confirm-box .confirm-message { font-size: 16px; text-align: center; padding: 10px 0; }
         .confirm-box .confirm-progress { margin-top: 16px; height: 4px; background: #e8ecf2; border-radius: 2px; overflow: hidden; display: none; }
         .confirm-box .confirm-progress.active { display: block; }
         .confirm-box .confirm-progress .bar { height: 100%; width: 0%; background: #2b6ef0; border-radius: 2px; animation: progressAnim 1.8s ease-in-out infinite; }
+        .confirm-box .confirm-progress .bar.error { animation: none; background: #cf222e; width: 100%; }
         .confirm-box .confirm-status { display: none; text-align: center; font-size: 13px; color: #6b7a8f; margin-top: 8px; }
         .confirm-box .confirm-status.active { display: block; }
+        .confirm-box .confirm-status.error { color: #cf222e; }
+        .confirm-box .confirm-status.success { color: #1f883d; }
+        .confirm-box .fail-actions { display: none; justify-content: center; margin-top: 16px; gap: 12px; }
+        .confirm-box .fail-actions.active { display: flex; }
         .avatar-zone { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #f8fafc; border: 1px dashed #d0d6de; border-radius: 12px; padding: 8px 12px; }
         .avatar-zone .file-btn { padding: 4px 14px; background: #eef2f7; border-radius: 6px; cursor: pointer; font-size: 13px; border: 1px solid #dce0e6; }
         .avatar-zone .upload-btn { padding: 4px 18px; background: #eef2f7; border-radius: 6px; cursor: pointer; font-size: 13px; border: none; }
@@ -114,7 +127,7 @@
     </div>
 </div>
 
-<!-- ===== Toast 居中弹窗 ===== -->
+<!-- Toast 居中 -->
 <div class="toast-center" id="toastCenter">
     <div class="toast-box">
         <div class="icon" id="toastIcon">✅</div>
@@ -124,13 +137,13 @@
     </div>
 </div>
 
-<!-- ===== 加载动画 ===== -->
+<!-- 加载动画 -->
 <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
     <div class="loading-text" id="loadingText">加载中...</div>
 </div>
 
-<!-- ===== 编辑模态框 ===== -->
+<!-- 编辑模态框 -->
 <div class="modal-overlay" id="editModalOverlay">
     <div class="modal-box">
         <button class="close-btn" id="editModalCloseBtn">&times;</button>
@@ -166,11 +179,14 @@
             <div class="modal-progress" id="editProgress"><div class="bar"></div></div>
             <div class="modal-status" id="editStatus">⏳ 正在提交并等待部署...</div>
             <button type="submit" class="btn-submit-modal" id="editSubmitBtn">更新</button>
+            <div class="fail-actions" id="editFailActions">
+                <button class="btn-close-fail" id="editFailCloseBtn">关闭</button>
+            </div>
         </form>
     </div>
 </div>
 
-<!-- ===== 确认/进度弹窗 ===== -->
+<!-- 确认/进度弹窗 -->
 <div class="modal-overlay" id="confirmModalOverlay">
     <div class="modal-box confirm-box">
         <h2 id="confirmTitle">确认操作</h2>
@@ -181,6 +197,9 @@
         </div>
         <div class="confirm-progress" id="confirmProgress"><div class="bar"></div></div>
         <div class="confirm-status" id="confirmStatus">⏳ 正在处理并等待部署...</div>
+        <div class="fail-actions" id="confirmFailActions">
+            <button class="btn-close-fail" id="confirmFailCloseBtn">关闭</button>
+        </div>
     </div>
 </div>
 
@@ -205,7 +224,6 @@
     var loadingOverlay = document.getElementById('loadingOverlay');
     var loadingText = document.getElementById('loadingText');
 
-    // Toast 居中弹窗
     var toastCenter = document.getElementById('toastCenter');
     var toastIcon = document.getElementById('toastIcon');
     var toastMsg = document.getElementById('toastMsg');
@@ -220,6 +238,8 @@
     var editSubmitBtn = document.getElementById('editSubmitBtn');
     var editProgress = document.getElementById('editProgress');
     var editStatus = document.getElementById('editStatus');
+    var editFailActions = document.getElementById('editFailActions');
+    var editFailCloseBtn = document.getElementById('editFailCloseBtn');
 
     var confirmModalOverlay = document.getElementById('confirmModalOverlay');
     var confirmTitle = document.getElementById('confirmTitle');
@@ -229,6 +249,8 @@
     var confirmOkBtn = document.getElementById('confirmOkBtn');
     var confirmProgress = document.getElementById('confirmProgress');
     var confirmStatus = document.getElementById('confirmStatus');
+    var confirmFailActions = document.getElementById('confirmFailActions');
+    var confirmFailCloseBtn = document.getElementById('confirmFailCloseBtn');
 
     var f_title = document.getElementById('f_title');
     var f_name = document.getElementById('f_name');
@@ -254,17 +276,14 @@
     var pollTimer = null;
     var MAX_POLLS = 24;
 
-    // ===== Toast 居中显示 =====
+    // ---- Toast 居中 ----
     function showToastCenter(icon, msg, sub) {
         toastIcon.textContent = icon || '✅';
         toastMsg.textContent = msg || '操作成功';
         toastSub.textContent = sub || '';
         toastCenter.classList.add('active');
     }
-
-    function hideToastCenter() {
-        toastCenter.classList.remove('active');
-    }
+    function hideToastCenter() { toastCenter.classList.remove('active'); }
     toastCloseBtn.onclick = hideToastCenter;
     toastCenter.onclick = function(e) { if (e.target === this) hideToastCenter(); };
 
@@ -272,11 +291,9 @@
         loadingText.textContent = msg || '加载中...';
         loadingOverlay.classList.add('active');
     }
+    function hideLoading() { loadingOverlay.classList.remove('active'); }
 
-    function hideLoading() {
-        loadingOverlay.classList.remove('active');
-    }
-
+    // ---- 解析 Issue ----
     function parseIssue(issue) {
         var body = issue.body || '';
         var get = function(key) { var m = body.match(new RegExp(key + '[：:]\\s*(.+)')); return m ? m[1].trim() : ''; };
@@ -306,7 +323,6 @@
     function escapeHtml(t) { if (!t) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
     function updateSelectedCount() { selectedCount.textContent = selectedIds.size; }
-
     function updateSelectAllState() {
         var total = filteredIssues.length;
         if (total === 0) { selectAll.checked = false; selectAll.indeterminate = false; return; }
@@ -376,7 +392,7 @@
         bindEvents();
     }
 
-    // ===== 加载 Issue 列表 =====
+    // ---- 加载列表 ----
     function loadIssues() {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) {
@@ -429,6 +445,7 @@
         render();
     };
 
+    // ---- 打开编辑 ----
     function openEditModal(id) {
         var issue = null;
         for (var i = 0; i < allIssues.length; i++) {
@@ -440,6 +457,8 @@
         editModalTitle.textContent = '编辑数据';
         editSubmitBtn.textContent = '更新';
         editSubmitBtn.disabled = false;
+        editSubmitBtn.classList.remove('hidden');
+        editFailActions.classList.remove('active');
         f_title.value = p.raw.titleVal;
         f_name.value = p.name;
         f_gender.value = p.raw.gender;
@@ -457,56 +476,83 @@
         else { editAvatarPreview.style.display = 'none'; }
         editProgress.classList.remove('active');
         editStatus.classList.remove('active');
+        editStatus.className = 'modal-status';
         editModalOverlay.classList.add('active');
     }
 
-    // ===== 轮询检测 Issue 是否已更新（通过重新拉取列表检测） =====
-    function pollForChanges(issueNumber, expectedName, onSuccess, onFail) {
+    // ===== 核心：精准轮询单条卡片的 data-version =====
+    function pollCardForIssue(issueNumber, oldVersion, onSuccess, onFail) {
         var count = 0;
         if (pollTimer) clearInterval(pollTimer);
-        pollTimer = setInterval(function() {
+        var cardUrl = 'https://merryAndrew.github.io/HealthCertificate/card.html?t=' + Date.now();
+
+        function check() {
             count++;
             var msg = '⏳ 等待部署... (' + (count * 5) + '秒)';
-            if (editStatus.classList.contains('active')) editStatus.textContent = msg;
-            if (confirmStatus.classList.contains('active')) confirmStatus.textContent = msg;
+            if (editStatus.classList.contains('active')) {
+                editStatus.textContent = msg;
+                editStatus.className = 'modal-status active';
+            }
+            if (confirmStatus.classList.contains('active')) {
+                confirmStatus.textContent = msg;
+                confirmStatus.className = 'confirm-status active';
+            }
 
-            var repo = getRepo(), token = getToken();
-            var url = 'https://api.github.com/repos/' + repo + '/issues/' + issueNumber;
-            fetch(url, { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json' } })
+            fetch(cardUrl, { cache: 'no-store' })
                 .then(function(res) {
                     if (!res.ok) throw new Error('网络错误');
-                    return res.json();
+                    return res.text();
                 })
-                .then(function(issue) {
-                    // 检测是否已关闭或标题是否匹配
-                    if (issue.state === 'closed') {
-                        // 删除成功
+                .then(function(html) {
+                    var regex = new RegExp('data-issue="' + issueNumber + '"\\s+data-version="([^"]+)"');
+                    var match = html.match(regex);
+                    if (match && match[1] !== oldVersion) {
                         clearInterval(pollTimer);
                         pollTimer = null;
-                        if (onSuccess) onSuccess('deleted');
+                        if (onSuccess) onSuccess();
                         return;
                     }
-                    if (issue.title === expectedName) {
-                        // 编辑成功（标题匹配）
+                    if (count >= MAX_POLLS) {
                         clearInterval(pollTimer);
                         pollTimer = null;
-                        if (onSuccess) onSuccess('updated');
-                        return;
+                        if (onFail) onFail('部署超时（' + (MAX_POLLS * 5) + '秒），请检查 Actions 运行状态');
                     }
                 })
                 .catch(function(err) {
-                    // 忽略错误继续轮询
+                    if (count >= MAX_POLLS) {
+                        clearInterval(pollTimer);
+                        pollTimer = null;
+                        if (onFail) onFail('部署超时，网络可能异常，请手动刷新');
+                    }
                 });
+        }
 
-            if (count >= MAX_POLLS) {
-                clearInterval(pollTimer);
-                pollTimer = null;
-                if (onFail) onFail('部署超时，请稍后手动刷新');
-            }
-        }, 5000);
+        check();
+        pollTimer = setInterval(check, 5000);
     }
 
-    // ===== 编辑提交 =====
+    // ---- 显示编辑失败状态 ----
+    function showEditFail(errMsg) {
+        editProgress.classList.remove('active');
+        editStatus.textContent = '❌ ' + errMsg;
+        editStatus.className = 'modal-status active error';
+        editSubmitBtn.classList.add('hidden');
+        editFailActions.classList.add('active');
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    // ---- 显示确认框失败状态 ----
+    function showConfirmFail(errMsg) {
+        confirmProgress.classList.remove('active');
+        confirmProgress.querySelector('.bar').className = 'bar error';
+        confirmStatus.textContent = '❌ ' + errMsg;
+        confirmStatus.className = 'confirm-status active error';
+        confirmActions.classList.add('hidden');
+        confirmFailActions.classList.add('active');
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    // ---- 编辑提交 ----
     editForm.onsubmit = function(e) {
         e.preventDefault();
         var repo = getRepo(), token = getToken();
@@ -516,15 +562,25 @@
         var issueNumber = parseInt(editIssueNumber.value);
         if (!issueNumber) { showToastCenter('⚠️', '错误：未找到 Issue 编号', ''); return; }
 
+        var oldVersion = '';
+        for (var i = 0; i < allIssues.length; i++) {
+            if (allIssues[i].number === issueNumber) {
+                oldVersion = allIssues[i].updated_at;
+                break;
+            }
+        }
+
         var body = '标题：' + f_title.value.trim() + '\n姓名：' + name + '\n性别：' + f_gender.value + '\n身份证：' + idNumber + '\n体检单位：' + f_hospital.value.trim() + '\n体检日期：' + f_date.value + '\n一段：' + f_duan1.value.trim() + '\n二段：' + f_duan2.value.trim() + '\nA版防伪字段：' + f_afangwei.value.trim() + '\nB版健康信息：' + f_bhealth.value.trim() + '\nA版三卡显示：' + f_aCard3.value + '\nB版三卡显示：' + f_bCard3.value + '\n';
         if (f_avatar.value.trim()) body += '头像图片：' + f_avatar.value.trim() + '\n';
         body += '提交于：' + new Date().toLocaleString('zh-CN');
 
         editProgress.classList.add('active');
-        editStatus.classList.add('active');
         editStatus.textContent = '⏳ 正在提交更新...';
+        editStatus.className = 'modal-status active';
         editSubmitBtn.disabled = true;
         editSubmitBtn.textContent = '更新中...';
+        editSubmitBtn.classList.remove('hidden');
+        editFailActions.classList.remove('active');
 
         var url = 'https://api.github.com/repos/' + repo + '/issues/' + issueNumber;
         fetch(url, {
@@ -536,49 +592,59 @@
             if (!res.ok) throw new Error('更新失败 (' + res.status + ')');
             editStatus.textContent = '⏳ 已提交，等待部署...';
 
-            // 轮询检测 Issue 标题是否已更新
-            pollForChanges(
+            pollCardForIssue(
                 issueNumber,
-                name,
-                function(type) {
-                    // 成功
+                oldVersion,
+                function() {
                     editModalOverlay.classList.remove('active');
                     editProgress.classList.remove('active');
-                    editStatus.classList.remove('active');
+                    editStatus.className = 'modal-status';
                     editSubmitBtn.disabled = false;
                     editSubmitBtn.textContent = '更新';
-                    showToastCenter('✅', '更新成功！', '姓名已更新为：' + name);
+                    editSubmitBtn.classList.remove('hidden');
+                    editFailActions.classList.remove('active');
+                    showToastCenter('✅', '更新成功！', '卡片已更新');
                     loadIssues();
                 },
                 function(errMsg) {
-                    editProgress.classList.remove('active');
-                    editStatus.classList.remove('active');
-                    editSubmitBtn.disabled = false;
-                    editSubmitBtn.textContent = '更新';
-                    showToastCenter('⚠️', errMsg, '请手动刷新页面');
-                    loadIssues();
+                    showEditFail(errMsg);
                 }
             );
         })
         .catch(function(err) {
-            editProgress.classList.remove('active');
-            editStatus.classList.remove('active');
-            showToastCenter('❌', '操作失败', err.message);
+            showEditFail('提交失败：' + err.message);
             editSubmitBtn.disabled = false;
             editSubmitBtn.textContent = '更新';
         });
     };
 
-    function closeEditModal() {
+    // ---- 编辑失败关闭 ----
+    editFailCloseBtn.onclick = function() {
         editModalOverlay.classList.remove('active');
         editProgress.classList.remove('active');
-        editStatus.classList.remove('active');
+        editStatus.className = 'modal-status';
+        editSubmitBtn.disabled = false;
+        editSubmitBtn.textContent = '更新';
+        editSubmitBtn.classList.remove('hidden');
+        editFailActions.classList.remove('active');
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        loadIssues();
+    };
+
+    function closeEditModal() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        editModalOverlay.classList.remove('active');
+        editProgress.classList.remove('active');
+        editStatus.className = 'modal-status';
+        editSubmitBtn.disabled = false;
+        editSubmitBtn.textContent = '更新';
+        editSubmitBtn.classList.remove('hidden');
+        editFailActions.classList.remove('active');
     }
     editModalCloseBtn.onclick = closeEditModal;
     editModalOverlay.onclick = function(e) { if (e.target === this) closeEditModal(); };
 
-    // ===== 确认删除（单条） =====
+    // ---- 确认删除（单条） ----
     function confirmDelete(id) {
         var issue = null;
         for (var i = 0; i < allIssues.length; i++) {
@@ -587,9 +653,11 @@
         if (!issue) return;
         confirmTitle.textContent = '确认删除';
         confirmMessage.textContent = '确定要删除「' + issue.title + '」吗？此操作将关闭 Issue。';
-        confirmActions.style.display = 'flex';
+        confirmActions.classList.remove('hidden');
         confirmProgress.classList.remove('active');
-        confirmStatus.classList.remove('active');
+        confirmProgress.querySelector('.bar').className = 'bar';
+        confirmStatus.className = 'confirm-status';
+        confirmFailActions.classList.remove('active');
         confirmOkBtn.className = 'btn btn-danger';
         confirmOkBtn.textContent = '确定删除';
         confirmOkBtn.onclick = function() { doDelete(issue); };
@@ -597,14 +665,16 @@
         confirmModalOverlay.classList.add('active');
     }
 
-    // ===== 批量删除 =====
+    // ---- 批量删除 ----
     batchDeleteBtn.onclick = function() {
         if (selectedIds.size === 0) { showToastCenter('⚠️', '请先选择要删除的数据', ''); return; }
         confirmTitle.textContent = '确认批量删除';
         confirmMessage.textContent = '确定要删除选中的 ' + selectedIds.size + ' 条数据吗？';
-        confirmActions.style.display = 'flex';
+        confirmActions.classList.remove('hidden');
         confirmProgress.classList.remove('active');
-        confirmStatus.classList.remove('active');
+        confirmProgress.querySelector('.bar').className = 'bar';
+        confirmStatus.className = 'confirm-status';
+        confirmFailActions.classList.remove('active');
         confirmOkBtn.className = 'btn btn-danger';
         confirmOkBtn.textContent = '确定删除';
         confirmOkBtn.onclick = function() { doBatchDelete(); };
@@ -612,14 +682,17 @@
         confirmModalOverlay.classList.add('active');
     };
 
-    // ===== 执行单条删除 =====
+    // ---- 执行单条删除 ----
     function doDelete(issue) {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); confirmModalOverlay.classList.remove('active'); return; }
-        confirmActions.style.display = 'none';
+        confirmActions.classList.add('hidden');
         confirmProgress.classList.add('active');
-        confirmStatus.classList.add('active');
+        confirmProgress.querySelector('.bar').className = 'bar';
         confirmStatus.textContent = '⏳ 正在删除并等待部署...';
+        confirmStatus.className = 'confirm-status active';
+        confirmFailActions.classList.remove('active');
+
         var url = 'https://api.github.com/repos/' + repo + '/issues/' + issue.number;
         fetch(url, {
             method: 'PATCH',
@@ -630,34 +703,26 @@
             if (!res.ok) throw new Error('HTTP ' + res.status);
             confirmStatus.textContent = '⏳ 已提交删除，等待部署...';
 
-            pollForChanges(
+            var oldVersion = issue.updated_at;
+            pollCardForIssue(
                 issue.number,
-                null,
-                function(type) {
+                oldVersion,
+                function() {
                     confirmModalOverlay.classList.remove('active');
-                    showToastCenter('✅', '删除成功！', '已关闭：' + issue.title);
+                    showToastCenter('✅', '删除成功！', '卡片已移除');
                     loadIssues();
                 },
                 function(errMsg) {
-                    confirmProgress.classList.remove('active');
-                    confirmStatus.classList.remove('active');
-                    confirmActions.style.display = 'flex';
-                    showToastCenter('⚠️', errMsg, '请手动刷新页面');
-                    confirmModalOverlay.classList.remove('active');
-                    loadIssues();
+                    showConfirmFail(errMsg);
                 }
             );
         })
         .catch(function(err) {
-            confirmProgress.classList.remove('active');
-            confirmStatus.classList.remove('active');
-            confirmActions.style.display = 'flex';
-            showToastCenter('❌', '删除失败', err.message);
-            confirmModalOverlay.classList.remove('active');
+            showConfirmFail('删除失败：' + err.message);
         });
     }
 
-    // ===== 执行批量删除 =====
+    // ---- 执行批量删除 ----
     function doBatchDelete() {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); confirmModalOverlay.classList.remove('active'); return; }
@@ -666,10 +731,12 @@
         for (var i = 0; i < allIssues.length; i++) {
             if (ids.indexOf(allIssues[i].id) !== -1) toDelete.push(allIssues[i]);
         }
-        confirmActions.style.display = 'none';
+        confirmActions.classList.add('hidden');
         confirmProgress.classList.add('active');
-        confirmStatus.classList.add('active');
+        confirmProgress.querySelector('.bar').className = 'bar';
         confirmStatus.textContent = '⏳ 正在批量删除 ' + toDelete.length + ' 条并等待部署...';
+        confirmStatus.className = 'confirm-status active';
+        confirmFailActions.classList.remove('active');
 
         var promises = [];
         for (var j = 0; j < toDelete.length; j++) {
@@ -685,38 +752,42 @@
         Promise.all(promises)
             .then(function() {
                 confirmStatus.textContent = '⏳ 已提交删除，等待部署...';
-                // 检测第一个是否已关闭
-                pollForChanges(
-                    toDelete[0].number,
-                    null,
-                    function(type) {
+                var firstIssue = toDelete[0];
+                var oldVersion = firstIssue.updated_at;
+                pollCardForIssue(
+                    firstIssue.number,
+                    oldVersion,
+                    function() {
                         confirmModalOverlay.classList.remove('active');
                         showToastCenter('✅', '批量删除成功！', '已删除 ' + toDelete.length + ' 条');
                         loadIssues();
                     },
                     function(errMsg) {
-                        confirmProgress.classList.remove('active');
-                        confirmStatus.classList.remove('active');
-                        confirmActions.style.display = 'flex';
-                        showToastCenter('⚠️', errMsg, '请手动刷新页面');
-                        confirmModalOverlay.classList.remove('active');
-                        loadIssues();
+                        showConfirmFail(errMsg);
                     }
                 );
             })
             .catch(function(err) {
-                confirmProgress.classList.remove('active');
-                confirmStatus.classList.remove('active');
-                confirmActions.style.display = 'flex';
-                showToastCenter('❌', '批量删除失败', err.message);
-                confirmModalOverlay.classList.remove('active');
+                showConfirmFail('批量删除失败：' + err.message);
             });
     }
+
+    // ---- 确认框失败关闭 ----
+    confirmFailCloseBtn.onclick = function() {
+        confirmModalOverlay.classList.remove('active');
+        confirmProgress.classList.remove('active');
+        confirmProgress.querySelector('.bar').className = 'bar';
+        confirmStatus.className = 'confirm-status';
+        confirmActions.classList.remove('hidden');
+        confirmFailActions.classList.remove('active');
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        loadIssues();
+    };
 
     confirmCancelBtn.onclick = function() { confirmModalOverlay.classList.remove('active'); };
     confirmModalOverlay.onclick = function(e) { if (e.target === this) { confirmModalOverlay.classList.remove('active'); if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } } };
 
-    // ===== 头像上传 =====
+    // ---- 头像上传 ----
     editFileBtn.onclick = function() { editAvatarFile.click(); };
     editAvatarFile.onchange = function() { editFileName.textContent = this.files && this.files.length > 0 ? this.files[0].name : '未选择'; };
     editUploadBtn.onclick = function() {
