@@ -92,6 +92,10 @@ def build_card(issue, style='A'):
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
+    # ===== 这里添加 data-issue 和 data-version =====
+    issue_number = issue['number']
+    issue_version = issue['updated_at']  # GitHub 提供的最后更新时间
+
     if style == 'A':
         bottom_html = ''
         if a_show == '0':
@@ -113,7 +117,7 @@ def build_card(issue, style='A'):
             </div>
             '''
         return f'''
-        <div class="cert-wrapper" data-title="{title}">
+        <div class="cert-wrapper" data-title="{title}" data-issue="{issue_number}" data-version="{issue_version}">
             <div class="cert-module top-card">
                 <div class="top-title">{title_val}</div>
                 <div class="top-content">
@@ -174,7 +178,7 @@ def build_card(issue, style='A'):
             </div>
             '''
         return f'''
-        <div class="cert-wrapper" data-title="{title}">
+        <div class="cert-wrapper" data-title="{title}" data-issue="{issue_number}" data-version="{issue_version}">
             <div class="cert-module top-card">
                 <div class="top-title">{title_val}</div>
                 <div class="top-content">
@@ -292,14 +296,12 @@ html_A = f'''<!DOCTYPE html>
             const wrappers = document.querySelectorAll('.cert-wrapper');
             const notFound = document.getElementById('notFoundMessage');
             
-            // 超级管理员：admin=0000 显示全部
             if (admin === '0000') {{
                 wrappers.forEach(w => w.style.display = 'block');
                 notFound.style.display = 'none';
                 return;
             }}
             
-            // 有 id 参数：按 id 过滤
             if (id) {{
                 let decodedId = '';
                 try {{ decodedId = decodeURIComponent(id); }} catch(e) {{ decodedId = id; }}
@@ -321,7 +323,6 @@ html_A = f'''<!DOCTYPE html>
                 return;
             }}
             
-            // 没有 id 且不是管理员：显示"未找到"
             wrappers.forEach(w => w.style.display = 'none');
             notFound.style.display = 'block';
         }})();
@@ -382,14 +383,12 @@ html_B = f'''<!DOCTYPE html>
             const wrappers = document.querySelectorAll('.cert-wrapper');
             const notFound = document.getElementById('notFoundMessage');
             
-            // 超级管理员：admin=0000 显示全部
             if (admin === '0000') {{
                 wrappers.forEach(w => w.style.display = 'block');
                 notFound.style.display = 'none';
                 return;
             }}
             
-            // 有 id 参数：按 id 过滤
             if (id) {{
                 let decodedId = '';
                 try {{ decodedId = decodeURIComponent(id); }} catch(e) {{ decodedId = id; }}
@@ -411,7 +410,6 @@ html_B = f'''<!DOCTYPE html>
                 return;
             }}
             
-            // 没有 id 且不是管理员：显示"未找到"
             wrappers.forEach(w => w.style.display = 'none');
             notFound.style.display = 'block';
         }})();
@@ -425,21 +423,17 @@ with open('dist/index.html', 'w', encoding='utf-8') as f:
 with open('dist/card.html', 'w', encoding='utf-8') as f:
     f.write(html_A)
 
+# 复制 upload.html 和 manage.html（如果存在）
 if os.path.exists('upload.html'):
     shutil.copy('upload.html', 'dist/upload.html')
     print("✅ 已复制 upload.html 到发布目录")
 else:
     print("⚠️ 未找到 upload.html，请确保该文件与 generate.py 在同一目录")
 
-
-
-# 复制管理页面
 if os.path.exists('manage.html'):
     shutil.copy('manage.html', 'dist/manage.html')
     print("✅ 已复制 manage.html 到发布目录")
 else:
     print("⚠️ 未找到 manage.html，请确保该文件与 generate.py 在同一目录")
 
-
-
-print("✅ 生成成功！已生成 index.html (B样式)、card.html (A样式) 和 upload.html（若存在）")
+print("✅ 生成成功！已生成 index.html (B样式)、card.html (A样式) 以及 upload.html 和 manage.html（若存在）")
