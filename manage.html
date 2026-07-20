@@ -56,21 +56,13 @@
         td { padding: 12px 10px; border-bottom: 1px solid #e1e4e8; vertical-align: middle; }
         tr:hover td { background: #f9fafb; }
 
-        /* 头像小长方形 + 圆角7px */
-        .avatar {
-            width: 50px;
-            height: 66px;
-            border-radius: 7px;
-            object-fit: cover;
-            background: #e1e4e8;
-            display: block;
-        }
+        .avatar { width: 50px; height: 66px; border-radius: 7px; object-fit: cover; background: #e1e4e8; display: block; }
         .name-cell { white-space: nowrap; min-width: 80px; }
 
         .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
         .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
 
-        /* Toast 提示 */
+        /* Toast */
         .toast {
             position: fixed; top: 20px; right: 20px;
             background: #1f883d; color: #fff;
@@ -82,7 +74,7 @@
         .toast.error { background: #cf222e; }
         .toast.show { opacity: 1; transform: translateY(0); }
 
-        /* 进度条（与 upload.html 一致） */
+        /* 进度条 */
         .progress-container {
             width: 100%;
             height: 4px;
@@ -125,12 +117,14 @@
         }
         @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
 
-        /* 模态框（居中） */
+        /* 模态框 — 强制居中 */
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0,0,0,0.5);
             z-index: 1000;
             justify-content: center;
@@ -148,7 +142,7 @@
             padding: 28px 24px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             position: relative;
-            margin: auto;
+            margin: 0 auto;
         }
         .modal-box .close-btn {
             position: absolute; right: 16px; top: 16px;
@@ -182,7 +176,9 @@
             cursor: pointer; margin-top: 10px;
         }
         .modal-box .btn-submit-modal:disabled { opacity: 0.5; }
-        .modal-box .modal-progress {
+
+        /* 模态框内部进度条 */
+        .modal-progress {
             margin-top: 12px;
             height: 4px;
             background: #e8ecf2;
@@ -190,14 +186,24 @@
             overflow: hidden;
             display: none;
         }
-        .modal-box .modal-progress.active { display: block; }
-        .modal-box .modal-progress .bar {
+        .modal-progress.active { display: block; }
+        .modal-progress .bar {
             height: 100%;
             width: 0%;
             background: #2b6ef0;
             border-radius: 2px;
             animation: progressAnim 1.8s ease-in-out infinite;
         }
+
+        /* 部署状态文字 */
+        .deploy-status {
+            display: none;
+            text-align: center;
+            font-size: 13px;
+            color: #6b7a8f;
+            margin-top: 8px;
+        }
+        .deploy-status.active { display: block; }
     </style>
 </head>
 <body>
@@ -220,6 +226,9 @@
     <div class="progress-container" id="globalProgress">
         <div class="progress-bar" id="globalProgressBar"></div>
     </div>
+
+    <!-- 部署状态文字 -->
+    <div class="deploy-status" id="deployStatus">⏳ 正在等待部署完成...</div>
 
     <!-- 加载动画 -->
     <div id="loadingArea" class="loading-spinner" style="display:none;">
@@ -283,11 +292,8 @@
                 </div>
             </div>
 
-            <!-- 模态框内部进度条 -->
-            <div class="modal-progress" id="modalProgress">
-                <div class="bar"></div>
-            </div>
-
+            <div class="modal-progress" id="modalProgress"><div class="bar"></div></div>
+            <div style="text-align:center;font-size:13px;color:#6b7a8f;margin-top:6px;display:none;" id="modalDeployStatus">⏳ 正在等待部署...</div>
             <button type="submit" class="btn-submit-modal" id="modalSubmitBtn">更新</button>
         </form>
     </div>
@@ -305,7 +311,7 @@
     function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
     function getImgbbKey() { return localStorage.getItem(IMGBB_KEY) || ''; }
 
-    // DOM 元素
+    // ===== DOM =====
     const tbody = document.getElementById('tableBody');
     const noData = document.getElementById('noData');
     const searchInput = document.getElementById('searchInput');
@@ -317,6 +323,8 @@
     const loadingArea = document.getElementById('loadingArea');
     const globalProgress = document.getElementById('globalProgress');
     const globalProgressBar = document.getElementById('globalProgressBar');
+    const deployStatus = document.getElementById('deployStatus');
+
     const modalOverlay = document.getElementById('modalOverlay');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
     const modalTitle = document.getElementById('modalTitle');
@@ -324,8 +332,8 @@
     const editIssueNumber = document.getElementById('editIssueNumber');
     const modalSubmitBtn = document.getElementById('modalSubmitBtn');
     const modalProgress = document.getElementById('modalProgress');
+    const modalDeployStatus = document.getElementById('modalDeployStatus');
 
-    // 表单字段...
     const f_title = document.getElementById('f_title');
     const f_name = document.getElementById('f_name');
     const f_gender = document.getElementById('f_gender');
@@ -346,12 +354,16 @@
     const modalUploadStatus = document.getElementById('modalUploadStatus');
     const modalAvatarPreview = document.getElementById('modalAvatarPreview');
 
-    // 状态
+    // ===== 状态 =====
     let allIssues = [];
     let filteredIssues = [];
     let selectedIds = new Set();
+    let pollTimer = null;
+    let pollCount = 0;
+    const MAX_POLLS = 24;
+    let currentPollTitle = '';
 
-    // ---- Toast ----
+    // ===== Toast =====
     function showToast(msg, isError = false) {
         const toast = document.getElementById('toast');
         toast.textContent = msg;
@@ -361,26 +373,71 @@
         window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // ---- 进度条控制 ----
+    // ===== 进度条控制 =====
     function showGlobalProgress() {
         globalProgress.classList.add('active');
         globalProgressBar.classList.remove('animate');
         void globalProgressBar.offsetWidth;
         globalProgressBar.classList.add('animate');
+        deployStatus.classList.add('active');
     }
     function hideGlobalProgress() {
         globalProgress.classList.remove('active');
         globalProgressBar.classList.remove('animate');
         globalProgressBar.style.width = '0%';
+        deployStatus.classList.remove('active');
     }
     function showModalProgress() {
         modalProgress.classList.add('active');
+        modalDeployStatus.style.display = 'block';
     }
     function hideModalProgress() {
         modalProgress.classList.remove('active');
+        modalDeployStatus.style.display = 'none';
     }
 
-    // ---- Parse Issue ----
+    // ===== 轮询检测部署（与 upload.html 相同逻辑） =====
+    function startPolling(title, callback) {
+        currentPollTitle = title;
+        pollCount = 0;
+        if (pollTimer) clearInterval(pollTimer);
+        showGlobalProgress();
+        showModalProgress();
+
+        pollTimer = setInterval(async function() {
+            pollCount++;
+            const msg = `正在等待部署完成... (${pollCount * 5}秒)`;
+            deployStatus.textContent = '⏳ ' + msg;
+            modalDeployStatus.textContent = '⏳ ' + msg;
+            try {
+                const url = `https://merryAndrew.github.io/HealthCertificate/card.html?t=${Date.now()}`;
+                const resp = await fetch(url);
+                if (!resp.ok) return;
+                const html = await resp.text();
+                // 检测是否包含该姓名的 data-title
+                if (html.includes(`data-title="${title}"`)) {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                    hideGlobalProgress();
+                    hideModalProgress();
+                    showToast('✅ 部署完成！', false);
+                    if (callback) callback();
+                    // 重新加载列表
+                    await loadIssues();
+                }
+            } catch (e) {}
+            if (pollCount >= MAX_POLLS) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+                hideGlobalProgress();
+                hideModalProgress();
+                showToast('⚠️ 检测超时，请稍后手动刷新', true);
+                if (callback) callback();
+            }
+        }, 5000);
+    }
+
+    // ===== Parse Issue =====
     function parseIssue(issue) {
         const body = issue.body || '';
         const get = (key) => {
@@ -410,7 +467,7 @@
         };
     }
 
-    // ---- Render ----
+    // ===== Render =====
     function render() {
         const data = filteredIssues;
         countDisplay.textContent = `共 ${data.length} 条`;
@@ -453,7 +510,6 @@
         return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    // ---- 事件绑定 ----
     function bindEvents() {
         document.querySelectorAll('.row-cb').forEach(cb => {
             cb.onchange = function() {
@@ -483,7 +539,7 @@
         selectAll.indeterminate = checked > 0 && checked < total;
     }
 
-    // ---- 加载 Issues ----
+    // ===== Load Issues =====
     async function loadIssues() {
         const repo = getRepo();
         const token = getToken();
@@ -511,7 +567,7 @@
         }
     }
 
-    // ---- 搜索过滤 ----
+    // ===== Search =====
     searchInput.oninput = function() {
         const keyword = this.value.trim().toLowerCase();
         if (!keyword) filteredIssues = [...allIssues];
@@ -520,7 +576,7 @@
         render();
     };
 
-    // ---- 全选 ----
+    // ===== Select All =====
     selectAll.onchange = function() {
         if (this.checked) {
             filteredIssues.forEach(i => selectedIds.add(i.id));
@@ -530,7 +586,7 @@
         render();
     };
 
-    // ---- 打开编辑模态框 ----
+    // ===== Open Edit Modal =====
     function openEditModal(id) {
         const issue = allIssues.find(i => i.id === id);
         if (!issue) return;
@@ -557,12 +613,11 @@
         } else {
             modalAvatarPreview.style.display = 'none';
         }
-        modalOverlay.classList.add('active');
-        // 隐藏模态框内的进度条
         hideModalProgress();
+        modalOverlay.classList.add('active');
     }
 
-    // ---- 模态框提交 ----
+    // ===== Modal Submit =====
     modalForm.onsubmit = async function(e) {
         e.preventDefault();
         const repo = getRepo();
@@ -579,7 +634,6 @@
         const title = name;
         const body = buildBody();
 
-        // 禁用按钮，显示进度
         modalSubmitBtn.disabled = true;
         modalSubmitBtn.textContent = '更新中...';
         showModalProgress();
@@ -593,14 +647,19 @@
                 body: JSON.stringify({ title, body })
             });
             if (!res.ok) throw new Error(`更新失败 (${res.status})`);
-            showToast('✅ 更新成功！', false);
+
+            // 关闭模态框，开始轮询检测部署
             modalOverlay.classList.remove('active');
-            await loadIssues(); // 重新加载列表
+            // 轮询检测 card.html 是否包含更新后的姓名
+            startPolling(title, function() {
+                modalSubmitBtn.disabled = false;
+                modalSubmitBtn.textContent = '更新 Issue';
+            });
+
         } catch (err) {
-            showToast('❌ 操作失败：' + err.message, true);
-        } finally {
-            hideModalProgress();
             hideGlobalProgress();
+            hideModalProgress();
+            showToast('❌ 操作失败：' + err.message, true);
             modalSubmitBtn.disabled = false;
             modalSubmitBtn.textContent = '更新 Issue';
         }
@@ -624,13 +683,14 @@
         return b;
     }
 
-    // ---- 删除单条 ----
+    // ===== Delete Single =====
     async function deleteIssue(id) {
         const issue = allIssues.find(i => i.id === id);
         if (!issue) return;
         if (!confirm(`确定要删除「${issue.title}」吗？`)) return;
         const repo = getRepo();
         const token = getToken();
+
         showGlobalProgress();
         try {
             const url = `https://api.github.com/repos/${repo}/issues/${issue.number}`;
@@ -640,16 +700,19 @@
                 body: JSON.stringify({ state: 'closed' })
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            showToast('✅ 已删除', false);
-            await loadIssues();
+            showToast('✅ 已关闭 Issue，等待部署...', false);
+            // 删除后也需要轮询检测（卡片页面会移除该条）
+            startPolling('__delete__', function() {
+                // 删除成功后重新加载
+                loadIssues();
+            });
         } catch (err) {
-            showToast('❌ 删除失败：' + err.message, true);
-        } finally {
             hideGlobalProgress();
+            showToast('❌ 删除失败：' + err.message, true);
         }
     }
 
-    // ---- 批量删除 ----
+    // ===== Batch Delete =====
     batchDeleteBtn.onclick = async function() {
         if (selectedIds.size === 0) return alert('请先选择要删除的数据');
         if (!confirm(`确定要删除选中的 ${selectedIds.size} 条数据吗？`)) return;
@@ -666,16 +729,17 @@
                     body: JSON.stringify({ state: 'closed' })
                 });
             }
-            showToast(`✅ 已删除 ${toDelete.length} 条`, false);
-            await loadIssues();
+            showToast(`✅ 已关闭 ${toDelete.length} 条，等待部署...`, false);
+            startPolling('__delete__', function() {
+                loadIssues();
+            });
         } catch (err) {
-            showToast('❌ 批量删除失败：' + err.message, true);
-        } finally {
             hideGlobalProgress();
+            showToast('❌ 批量删除失败：' + err.message, true);
         }
     };
 
-    // ---- 模态框头像上传 ----
+    // ===== Avatar Upload =====
     modalFileBtn.onclick = () => modalAvatarFile.click();
     modalAvatarFile.onchange = function() {
         if (this.files && this.files.length > 0) modalFileName.textContent = this.files[0].name;
@@ -721,24 +785,25 @@
         }
     };
 
-    // ---- 关闭模态框 ----
+    // ===== Close Modal =====
     function closeModal() {
         modalOverlay.classList.remove('active');
         hideModalProgress();
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        hideGlobalProgress();
     }
     modalCloseBtn.onclick = closeModal;
     modalOverlay.onclick = function(e) { if (e.target === this) closeModal(); };
 
-    // ---- 刷新 ----
+    // ===== Refresh =====
     refreshBtn.onclick = loadIssues;
 
-    // ---- 初始化 ----
+    // ===== Init =====
     if (!getRepo() || !getToken()) {
         showToast('⚠️ 请先在「系统配置」中保存仓库路径和 Token', true);
     }
     loadIssues();
 
-    // 给日期框默认今天
     const today = new Date().toISOString().split('T')[0];
     if (f_date) f_date.value = today;
 })();
