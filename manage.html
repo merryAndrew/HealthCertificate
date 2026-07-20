@@ -29,6 +29,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            text-decoration: none;
         }
         .btn-primary { background: #1a2332; color: #fff; }
         .btn-primary:hover { background: #2d3a4f; }
@@ -54,7 +55,22 @@
         th { text-align: left; padding: 12px 10px; border-bottom: 2px solid #e1e4e8; background: #f6f8fa; font-weight: 600; }
         td { padding: 12px 10px; border-bottom: 1px solid #e1e4e8; vertical-align: middle; }
         tr:hover td { background: #f9fafb; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e1e4e8; }
+
+        /* ===== 头像：小长方形 + 圆角 7px ===== */
+        .avatar {
+            width: 50px;
+            height: 66px;
+            border-radius: 7px;
+            object-fit: cover;
+            background: #e1e4e8;
+            display: block;
+        }
+        /* ===== 姓名列不换行 ===== */
+        .name-cell {
+            white-space: nowrap;
+            min-width: 80px;
+        }
+
         .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
 
         .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
@@ -64,18 +80,32 @@
         .toast.error { background: #cf222e; }
         .toast.show { opacity: 1; transform: translateY(0); }
 
-        /* Modal */
+        /* ===== Modal 居中 ===== */
         .modal-overlay {
-            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
         }
         .modal-overlay.active { display: flex; }
         .modal-box {
-            background: #fff; border-radius: 16px; max-width: 600px; width: 100%;
-            max-height: 90vh; overflow-y: auto; padding: 28px 24px;
+            background: #fff;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 28px 24px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             position: relative;
+            margin: auto;
         }
         .modal-box .close-btn {
             position: absolute; right: 16px; top: 16px;
@@ -100,7 +130,7 @@
         .modal-box .avatar-zone .upload-btn { padding: 4px 18px; background: #eef2f7; border-radius: 6px; cursor: pointer; font-size: 13px; border: none; }
         .modal-box .avatar-zone .status { font-size: 12px; color: #6b7a8f; }
         .modal-box .avatar-preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        .modal-box .avatar-preview img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #e1e4e8; display: none; }
+        .modal-box .avatar-preview img { width: 50px; height: 66px; border-radius: 7px; object-fit: cover; border: 2px solid #e1e4e8; display: none; }
         .modal-box .avatar-preview input { flex: 1; min-width: 140px; }
 
         .modal-box .btn-submit-modal { width: 100%; padding: 14px; font-size: 17px; font-weight: 600; background: #1a2332; color: #fff; border: none; border-radius: 40px; cursor: pointer; margin-top: 10px; }
@@ -118,7 +148,8 @@
         <h1>📋 数据管理</h1>
         <div class="actions">
             <button class="btn btn-outline" id="refreshBtn">🔄 刷新</button>
-            <button class="btn btn-success" id="addBtn">➕ 新增</button>
+            <!-- ===== 新增改成返回 ===== -->
+            <a href="upload.html" class="btn btn-success">🔙 返回</a>
         </div>
     </div>
 
@@ -131,7 +162,7 @@
 
     <div class="table-wrap" id="tableWrap">
         <table>
-            <thead><tr><th style="width:30px;"><input type="checkbox" id="selectAll"></th><th style="width:50px;">头像</th><th>姓名</th><th>身份证号</th><th style="width:160px;">操作</th></tr></thead>
+            <thead><tr><th style="width:30px;"><input type="checkbox" id="selectAll"></th><th style="width:60px;">头像</th><th style="min-width:80px;">姓名</th><th>身份证号</th><th style="width:160px;">操作</th></tr></thead>
             <tbody id="tableBody"></tbody>
         </table>
         <div id="noData" class="no-data" style="display:none;">暂无数据</div>
@@ -147,9 +178,8 @@
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal-box">
         <button class="close-btn" id="modalCloseBtn">&times;</button>
-        <h2 id="modalTitle">新增数据</h2>
+        <h2 id="modalTitle">编辑数据</h2>
         <form id="modalForm">
-            <!-- 隐藏字段：编辑时的 Issue Number -->
             <input type="hidden" id="editIssueNumber" value="">
 
             <div class="field"><label>标题</label><input type="text" id="f_title" value="广东省食品从业人员健康证明"></div>
@@ -186,7 +216,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit-modal" id="modalSubmitBtn">提交</button>
+            <button type="submit" class="btn-submit-modal" id="modalSubmitBtn">更新</button>
         </form>
     </div>
 </div>
@@ -246,7 +276,7 @@
     const modalAvatarPreview = document.getElementById('modalAvatarPreview');
 
     // State
-    let allIssues = []; // open issues
+    let allIssues = [];
     let filteredIssues = [];
     let selectedIds = new Set();
 
@@ -309,12 +339,12 @@
         data.forEach(issue => {
             const p = parseIssue(issue);
             const checked = selectedIds.has(issue.id) ? 'checked' : '';
-            const avatarSrc = p.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22 fill=%22%23e1e4e8%22%3E%3Crect width=%2240%22 height=%2240%22/%3E%3C/svg%3E';
+            const avatarSrc = p.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 66%22 fill=%22%23e1e4e8%22%3E%3Crect width=%2250%22 height=%2266%22/%3E%3C/svg%3E';
             html += `
                 <tr>
                     <td><input type="checkbox" class="row-cb" data-id="${issue.id}" ${checked}></td>
                     <td><img class="avatar" src="${avatarSrc}" alt="头像"></td>
-                    <td><strong>${escapeHtml(p.name)}</strong></td>
+                    <td class="name-cell"><strong>${escapeHtml(p.name)}</strong></td>
                     <td>${escapeHtml(p.idCard)}</td>
                     <td>
                         <button class="btn btn-primary btn-sm edit-btn" data-id="${issue.id}">编辑</button>
@@ -412,15 +442,7 @@
         render();
     };
 
-    // ---- Add / Edit Modal ----
-    function openAddModal() {
-        editIssueNumber.value = '';
-        modalTitle.textContent = '新增数据';
-        modalSubmitBtn.textContent = '提交 Issue';
-        clearForm();
-        modalOverlay.classList.add('active');
-    }
-
+    // ---- Edit Modal ----
     function openEditModal(id) {
         const issue = allIssues.find(i => i.id === id);
         if (!issue) return;
@@ -489,11 +511,10 @@
         const body = buildBody();
 
         modalSubmitBtn.disabled = true;
-        modalSubmitBtn.textContent = '提交中...';
+        modalSubmitBtn.textContent = '更新中...';
 
         try {
             if (issueNumber) {
-                // 编辑
                 const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}`;
                 const res = await fetch(url, {
                     method: 'PATCH',
@@ -503,15 +524,8 @@
                 if (!res.ok) throw new Error(`更新失败 (${res.status})`);
                 showToast('更新成功！', false);
             } else {
-                // 新增
-                const url = `https://api.github.com/repos/${repo}/issues`;
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, body })
-                });
-                if (!res.ok) throw new Error(`创建失败 (${res.status})`);
-                showToast('创建成功！', false);
+                showToast('⚠️ 未找到 Issue 编号', true);
+                return;
             }
             modalOverlay.classList.remove('active');
             await loadIssues();
@@ -519,7 +533,7 @@
             showToast('操作失败：' + err.message, true);
         } finally {
             modalSubmitBtn.disabled = false;
-            modalSubmitBtn.textContent = issueNumber ? '更新 Issue' : '提交 Issue';
+            modalSubmitBtn.textContent = '更新 Issue';
         }
     };
 
@@ -639,9 +653,8 @@
     modalCloseBtn.onclick = closeModal;
     modalOverlay.onclick = function(e) { if (e.target === this) closeModal(); };
 
-    // ---- Refresh & Add ----
+    // ---- Refresh ----
     refreshBtn.onclick = loadIssues;
-    addBtn.onclick = openAddModal;
 
     // ---- Init ----
     if (!getRepo() || !getToken()) {
