@@ -68,6 +68,10 @@ def build_card(issue, style='A'):
     else:
         date_display = '未选择日期 (有效期一年)'
 
+    # 中间卡片文字（可编辑）
+    middle_text_match = re.search(r'中间文字[：:]\s*(.+)', all_text)
+    middle_text = middle_text_match.group(1).strip() if middle_text_match else '广东省食品从业人员'
+
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
@@ -123,7 +127,7 @@ def build_card(issue, style='A'):
                 </div>
             </div>
             <div class="cert-module middle-card">
-                <div class="middle-line">广东省食品从业人员</div>
+                <div class="middle-line" id="middleLine_{issue['number']}">{middle_text}</div>
                 <div class="middle-line">健康证明</div>
             </div>
             <div class="bottom-card">
@@ -144,17 +148,11 @@ def build_card(issue, style='A'):
         </div>
         '''
     else:
-        # B版 – 所有卡片独立编辑
+        # B版 – 所有卡片字段可编辑
         return f'''
-        <div class="cert-wrapper" data-title="{title}" data-issue-number="{issue['number']}" style="position: relative;">
-            <!-- 按钮组 -->
-            <button id="editBtn_{issue['number']}" class="edit-btn" style="display: none; position: absolute; bottom: 12px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
-            <button id="saveBtn_{issue['number']}" class="save-btn" style="display: none; position: absolute; bottom: 12px; right: 100px; background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">保存</button>
-            <button id="deleteBtn_{issue['number']}" class="delete-btn" style="display: none; position: absolute; bottom: 12px; right: 190px; background: #e53e3e; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">删除</button>
-            <div id="editStatus_{issue['number']}" style="display: none; position: absolute; bottom: 52px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20;"></div>
-            
+        <div class="cert-wrapper" data-title="{title}" data-issue-number="{issue['number']}" style="position: relative; padding-bottom: 60px;">
+            <!-- 卡片模块 -->
             <div class="cert-module top-card">
-                <!-- 标题可编辑 -->
                 <div class="top-title" id="title_{issue['number']}">广东省食品从业人员健康证明</div>
                 <div class="top-content">
                     <div class="text-container">
@@ -192,10 +190,12 @@ def build_card(issue, style='A'):
                     </div>
                 </div>
             </div>
+            <!-- 中间卡片 -->
             <div class="cert-module middle-card">
-                <div class="middle-line">广东省食品从业人员</div>
+                <div class="middle-line" id="middleText_{issue['number']}">{middle_text}</div>
                 <div class="middle-line">健康证明</div>
             </div>
+            <!-- 底部卡片 -->
             <div class="bottom-card">
                 <div class="qrcode-area">
                     <div class="qrcode-img">
@@ -204,6 +204,18 @@ def build_card(issue, style='A'):
                     <div class="qrcode-title">此健康信息已上报平台</div>
                 </div>
             </div>
+            
+            <!-- 按钮组（放在最后一张卡片底部） -->
+            <div id="buttonGroup_{issue['number']}" style="display: none; position: absolute; bottom: 10px; left: 0; right: 0; padding: 0 12px; display: flex; justify-content: space-between; align-items: center; z-index: 30;">
+                <button id="deleteBtn_{issue['number']}" class="delete-btn" style="background: #e53e3e; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">删除</button>
+                <div>
+                    <button id="saveBtn_{issue['number']}" class="save-btn" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; margin-right: 8px;">保存</button>
+                    <button id="cancelBtn_{issue['number']}" class="cancel-btn" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">取消</button>
+                </div>
+            </div>
+            <!-- 编辑按钮（默认显示） -->
+            <button id="editBtn_{issue['number']}" class="edit-btn" style="position: absolute; bottom: 10px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
+            <div id="editStatus_{issue['number']}" style="display: none; position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20;"></div>
         </div>
         '''
 
@@ -215,11 +227,6 @@ for issue in issues:
     cards_A.append(build_card(issue, 'A'))
     cards_B.append(build_card(issue, 'B'))
 
-# 不反转，保持创建顺序（最新的在下面）
-# 如果需要最新在上，可以取消注释下一行
-# cards_A.reverse()
-# cards_B.reverse()
-
 html_B = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -230,7 +237,7 @@ html_B = f'''<!DOCTYPE html>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }}
-        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; position: relative; }}
+        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; position: relative; padding-bottom: 60px; }}
         .cert-module {{ background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }}
         .top-card {{ font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }}
         .top-title {{ text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }}
@@ -265,22 +272,77 @@ html_B = f'''<!DOCTYPE html>
             border-color: #2f9e44;
             box-shadow: 0 0 0 2px rgba(47, 158, 68, 0.2);
         }}
+        .not-found {{
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 18px;
+            color: #666;
+            background: #f8f8f8;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }}
+        .button-group {{
+            position: absolute;
+            bottom: 10px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 30;
+        }}
+        .button-group.hidden {{
+            display: none;
+        }}
     </style>
 </head>
 <body>
-    {''.join(cards_B)}
+    <div id="cards-container">
+        {''.join(cards_B)}
+        <div id="notFoundMessage" class="not-found" style="display: none;">未找到该健康证</div>
+    </div>
     
     <script>
         (function() {{
             const params = new URLSearchParams(window.location.search);
+            const idParam = params.get('id');
+            const wrappers = document.querySelectorAll('.cert-wrapper');
+            const notFound = document.getElementById('notFoundMessage');
+            
+            // ===== 过滤卡片 =====
+            if (idParam) {{
+                // 解码 URL 编码的中文
+                let decodedId = '';
+                try {{
+                    decodedId = decodeURIComponent(idParam);
+                }} catch (e) {{
+                    decodedId = idParam;
+                }}
+                let found = false;
+                wrappers.forEach(w => {{
+                    const title = w.dataset.title;
+                    if (title === decodedId) {{
+                        w.style.display = 'block';
+                        found = true;
+                    }} else {{
+                        w.style.display = 'none';
+                    }}
+                }});
+                if (!found) {{
+                    wrappers.forEach(w => w.style.display = 'none');
+                    notFound.style.display = 'block';
+                }}
+            }}
+            
+            // ===== 编辑权限 =====
             const editParam = params.get('edit');
             const isEditor = (editParam === '123456');
-            
             if (!isEditor) return;
             
-            // 显示所有卡片的编辑和删除按钮
-            document.querySelectorAll('.edit-btn').forEach(btn => btn.style.display = 'inline-block');
-            document.querySelectorAll('.delete-btn').forEach(btn => btn.style.display = 'inline-block');
+            // ===== 显示编辑按钮，隐藏其他 =====
+            document.querySelectorAll('.edit-btn').forEach(btn => btn.style.display = 'block');
+            document.querySelectorAll('.button-group').forEach(group => group.classList.add('hidden'));
+            document.querySelectorAll('.save-btn, .delete-btn, .cancel-btn').forEach(btn => btn.style.display = 'inline-block');
             
             // ===== 编辑功能 =====
             document.querySelectorAll('.edit-btn').forEach(btn => {{
@@ -291,21 +353,27 @@ html_B = f'''<!DOCTYPE html>
                 const genderEl = document.getElementById('gender_' + issueNumber);
                 const idEl = document.getElementById('id_' + issueNumber);
                 const dateEl = document.getElementById('date_' + issueNumber);
+                const middleTextEl = document.getElementById('middleText_' + issueNumber);
+                const group = document.getElementById('buttonGroup_' + issueNumber);
                 const saveBtn = document.getElementById('saveBtn_' + issueNumber);
                 const deleteBtn = document.getElementById('deleteBtn_' + issueNumber);
+                const cancelBtn = document.getElementById('cancelBtn_' + issueNumber);
                 const editStatus = document.getElementById('editStatus_' + issueNumber);
                 
-                if (!titleEl || !nameEl || !genderEl || !idEl || !dateEl || !saveBtn) return;
+                if (!group) return;
                 
                 btn.addEventListener('click', function() {{
-                    // 所有字段变为可编辑（标题 + 内容）
-                    [titleEl, nameEl, genderEl, idEl, dateEl].forEach(el => {{
+                    // 隐藏编辑按钮，显示按钮组
+                    btn.style.display = 'none';
+                    group.classList.remove('hidden');
+                    // 所有字段变为可编辑
+                    [titleEl, nameEl, genderEl, idEl, dateEl, middleTextEl].forEach(el => {{
                         if (el) {{
                             el.contentEditable = true;
                             el.classList.add('editable-field');
                         }}
                     }});
-                    // 性别改为下拉选择
+                    // 性别改为下拉
                     if (genderEl) {{
                         const currentGender = genderEl.textContent.trim();
                         genderEl.contentEditable = false;
@@ -314,161 +382,140 @@ html_B = f'''<!DOCTYPE html>
                             <option value="女" ${{currentGender === '女' ? 'selected' : ''}}>女</option>
                         </select>`;
                     }}
-                    saveBtn.style.display = 'inline-block';
-                    deleteBtn.style.display = 'none';
-                    btn.style.display = 'none';
-                    editStatus.textContent = '点击保存修改';
+                    editStatus.textContent = '编辑中...';
                     editStatus.style.display = 'block';
                 }});
                 
-                saveBtn.addEventListener('click', function() {{
-                    const newTitle = titleEl ? titleEl.textContent.trim() : '广东省食品从业人员健康证明';
-                    const newName = nameEl ? nameEl.textContent.trim() : '';
-                    let newGender = '';
-                    const genderSelect = genderEl ? genderEl.querySelector('.gender-select') : null;
-                    if (genderSelect) {{
-                        newGender = genderSelect.value;
-                    }} else {{
-                        newGender = genderEl ? genderEl.textContent.trim() : '男';
-                    }}
-                    const newId = idEl ? idEl.textContent.trim() : '';
-                    const newDate = dateEl ? dateEl.textContent.trim() : '';
-                    
-                    // 注意：标题作为 Issue 标题，正文只存其他字段
-                    // 这里用新标题更新 Issue 标题，正文存其他字段
-                    const newTitleField = newTitle;
-                    const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}`;
-                    
-                    let token = localStorage.getItem('github_token');
-                    if (!token) {{
-                        token = prompt('请输入您的 GitHub Token（编辑需要）:');
-                        if (token) localStorage.setItem('github_token', token);
-                    }}
-                    if (!token) {{
-                        editStatus.textContent = '❌ 需要 Token 才能保存';
-                        editStatus.style.color = '#e53e3e';
-                        return;
-                    }}
-                    
-                    const repo = 'merryAndrew/HealthCertificate';
-                    const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
-                    
-                    editStatus.textContent = '⏳ 保存中...';
-                    editStatus.style.color = '#2b6ef0';
-                    
-                    fetch(url, {{
-                        method: 'PATCH',
-                        headers: {{
-                            'Authorization': `Bearer ${{token}}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json',
-                        }},
-                        body: JSON.stringify({{
-                            title: newTitleField,
-                            body: body
-                        }})
-                    }})
-                    .then(res => {{
-                        if (!res.ok) throw new Error('保存失败: ' + res.status);
-                        return res.json();
-                    }})
-                    .then(() => {{
-                        editStatus.textContent = '✅ 保存成功！正在重新生成...';
-                        editStatus.style.color = '#2f9e44';
-                        // 恢复只读
-                        [titleEl, nameEl, idEl, dateEl].forEach(el => {{
-                            if (el) {{
-                                el.contentEditable = false;
-                                el.classList.remove('editable-field');
-                            }}
-                        }});
-                        if (genderSelect) {{
-                            genderEl.innerHTML = genderSelect.value;
-                        }}
-                        saveBtn.style.display = 'none';
-                        deleteBtn.style.display = 'inline-block';
-                        btn.style.display = 'inline-block';
-                        editStatus.textContent = '⏳ 等待 Actions 重新生成（约1-2分钟）...';
-                        editStatus.style.color = '#b36b1e';
-                        setTimeout(() => {{
-                            editStatus.textContent = '🔄 刷新页面查看更新';
-                            editStatus.style.color = '#2b6ef0';
-                        }}, 3000);
-                    }})
-                    .catch(err => {{
-                        editStatus.textContent = '❌ ' + err.message;
-                        editStatus.style.color = '#e53e3e';
+                // 取消编辑
+                if (cancelBtn) {{
+                    cancelBtn.addEventListener('click', function() {{
+                        // 恢复只读，还原内容（从数据集或重新获取）
+                        location.reload();
                     }});
-                }});
-            }});
-            
-            // ===== 删除卡片功能（关闭 Issue） =====
-            document.querySelectorAll('.delete-btn').forEach(btn => {{
-                const wrapper = btn.closest('.cert-wrapper');
-                const issueNumber = wrapper.dataset.issueNumber;
-                const editStatus = document.getElementById('editStatus_' + issueNumber);
+                }}
                 
-                if (!issueNumber) return;
-                
-                btn.addEventListener('click', function(e) {{
-                    e.stopPropagation();
-                    if (!confirm('确定要删除这张卡片吗？删除后不可恢复。')) return;
-                    
-                    let token = localStorage.getItem('github_token');
-                    if (!token) {{
-                        token = prompt('请输入您的 GitHub Token（删除需要）:');
-                        if (token) localStorage.setItem('github_token', token);
-                    }}
-                    if (!token) {{
-                        if (editStatus) {{
-                            editStatus.textContent = '❌ 需要 Token 才能删除';
+                // 保存
+                if (saveBtn) {{
+                    saveBtn.addEventListener('click', function() {{
+                        const newTitle = titleEl ? titleEl.textContent.trim() : '广东省食品从业人员健康证明';
+                        const newName = nameEl ? nameEl.textContent.trim() : '';
+                        let newGender = '';
+                        const genderSelect = genderEl ? genderEl.querySelector('.gender-select') : null;
+                        if (genderSelect) {{
+                            newGender = genderSelect.value;
+                        }} else {{
+                            newGender = genderEl ? genderEl.textContent.trim() : '男';
+                        }}
+                        const newId = idEl ? idEl.textContent.trim() : '';
+                        const newDate = dateEl ? dateEl.textContent.trim() : '';
+                        const newMiddle = middleTextEl ? middleTextEl.textContent.trim() : '广东省食品从业人员';
+                        
+                        let token = localStorage.getItem('github_token');
+                        if (!token) {{
+                            token = prompt('请输入您的 GitHub Token（编辑需要）:');
+                            if (token) localStorage.setItem('github_token', token);
+                        }}
+                        if (!token) {{
+                            editStatus.textContent = '❌ 需要 Token 才能保存';
                             editStatus.style.color = '#e53e3e';
-                            editStatus.style.display = 'block';
+                            return;
                         }}
-                        return;
-                    }}
-                    
-                    const repo = 'merryAndrew/HealthCertificate';
-                    const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
-                    
-                    if (editStatus) {{
-                        editStatus.textContent = '⏳ 删除中...';
-                        editStatus.style.color = '#e53e3e';
-                        editStatus.style.display = 'block';
-                    }}
-                    
-                    // 关闭 Issue
-                    fetch(url, {{
-                        method: 'PATCH',
-                        headers: {{
-                            'Authorization': `Bearer ${{token}}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json',
-                        }},
-                        body: JSON.stringify({{ state: 'closed' }})
-                    }})
-                    .then(res => {{
-                        if (!res.ok) throw new Error('删除失败: ' + res.status);
-                        return res.json();
-                    }})
-                    .then(() => {{
-                        if (editStatus) {{
-                            editStatus.textContent = '✅ 删除成功！正在刷新...';
+                        
+                        const repo = 'merryAndrew/HealthCertificate';
+                        const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
+                        const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}\\n中间文字：${{newMiddle}}`;
+                        
+                        editStatus.textContent = '⏳ 保存中...';
+                        editStatus.style.color = '#2b6ef0';
+                        
+                        fetch(url, {{
+                            method: 'PATCH',
+                            headers: {{
+                                'Authorization': `Bearer ${{token}}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json',
+                            }},
+                            body: JSON.stringify({{
+                                title: newTitle,
+                                body: body
+                            }})
+                        }})
+                        .then(res => {{
+                            if (!res.ok) throw new Error('保存失败: ' + res.status);
+                            return res.json();
+                        }})
+                        .then(() => {{
+                            editStatus.textContent = '✅ 保存成功！正在重新生成...';
                             editStatus.style.color = '#2f9e44';
-                        }}
-                        // 隐藏卡片
-                        wrapper.style.display = 'none';
-                        setTimeout(() => {{
-                            location.reload();
-                        }}, 1500);
-                    }})
-                    .catch(err => {{
-                        if (editStatus) {{
+                            // 恢复只读
+                            [titleEl, nameEl, idEl, dateEl, middleTextEl].forEach(el => {{
+                                if (el) {{
+                                    el.contentEditable = false;
+                                    el.classList.remove('editable-field');
+                                }}
+                            }});
+                            if (genderSelect) {{
+                                genderEl.innerHTML = genderSelect.value;
+                            }}
+                            // 隐藏按钮组，显示编辑按钮
+                            group.classList.add('hidden');
+                            btn.style.display = 'block';
+                            editStatus.textContent = '⏳ 等待 Actions 重新生成（约1-2分钟）...';
+                            editStatus.style.color = '#b36b1e';
+                            setTimeout(() => {{
+                                editStatus.textContent = '🔄 刷新页面查看更新';
+                                editStatus.style.color = '#2b6ef0';
+                            }}, 3000);
+                        }})
+                        .catch(err => {{
                             editStatus.textContent = '❌ ' + err.message;
                             editStatus.style.color = '#e53e3e';
-                        }}
+                        }});
                     }});
-                }});
+                }}
+                
+                // 删除
+                if (deleteBtn) {{
+                    deleteBtn.addEventListener('click', function() {{
+                        if (!confirm('确定要删除这张卡片吗？删除后不可恢复。')) return;
+                        let token = localStorage.getItem('github_token');
+                        if (!token) {{
+                            token = prompt('请输入您的 GitHub Token（删除需要）:');
+                            if (token) localStorage.setItem('github_token', token);
+                        }}
+                        if (!token) {{
+                            editStatus.textContent = '❌ 需要 Token 才能删除';
+                            editStatus.style.color = '#e53e3e';
+                            return;
+                        }}
+                        const repo = 'merryAndrew/HealthCertificate';
+                        const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
+                        editStatus.textContent = '⏳ 删除中...';
+                        editStatus.style.color = '#e53e3e';
+                        fetch(url, {{
+                            method: 'PATCH',
+                            headers: {{
+                                'Authorization': `Bearer ${{token}}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json',
+                            }},
+                            body: JSON.stringify({{ state: 'closed' }})
+                        }})
+                        .then(res => {{
+                            if (!res.ok) throw new Error('删除失败: ' + res.status);
+                            return res.json();
+                        }})
+                        .then(() => {{
+                            editStatus.textContent = '✅ 删除成功！正在刷新...';
+                            editStatus.style.color = '#2f9e44';
+                            setTimeout(() => location.reload(), 1500);
+                        }})
+                        .catch(err => {{
+                            editStatus.textContent = '❌ ' + err.message;
+                            editStatus.style.color = '#e53e3e';
+                        }});
+                    }});
+                }}
             }});
         }})();
     </script>
