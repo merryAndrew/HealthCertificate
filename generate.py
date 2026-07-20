@@ -431,4 +431,15 @@ if os.path.exists('upload.html'):
 else:
     print("⚠️ 未找到 upload.html，请确保该文件与 generate.py 在同一目录")
 
+
+
+# 复制管理页面
+if os.path.exists('manage.html'):
+    shutil.copy('manage.html', 'dist/manage.html')
+    print("✅ 已复制 manage.html 到发布目录")
+else:
+    print("⚠️ 未找到 manage.html，请确保该文件与 generate.py 在同一目录")
+
+
+
 print("✅ 生成成功！已生成 index.html (B样式)、card.html (A样式) 和 upload.html（若存在）")
