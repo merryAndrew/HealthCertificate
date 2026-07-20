@@ -179,7 +179,7 @@
             background: #eef2f7;
             color: #1a2332;
             border: none;
-            border-radius: 7px;  /* 改为 7px */
+            border-radius: 7px;
             cursor: pointer;
             transition: background 0.2s;
             line-height: 1.6;
@@ -497,13 +497,10 @@
             <div class="avatar-zone">
                 <span class="file-btn" id="fileSelectBtn">选择文件</span>
                 <input type="file" id="avatarFile" accept="image/*" style="display:none;">
-                <span class="file-name" id="fileName">
-                <!--未选择 -->
-                </span>
+                <span class="file-name" id="fileName">未选择</span>
                 <button class="upload-btn" id="uploadAvatarBtn">上传并获取链接</button>
                 <span class="upload-status" id="uploadStatus"></span>
             </div>
-            <!-- 进度条 -->
             <div class="progress-container" id="progressContainer">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
@@ -573,11 +570,9 @@
         let pollCount = 0;
         const MAX_POLLS = 24;
 
-        // 进度条控制
         function showProgress() {
             progressContainer.classList.add('active');
             progressBar.classList.remove('animate');
-            // 强制重绘
             void progressBar.offsetWidth;
             progressBar.classList.add('animate');
         }
@@ -612,12 +607,15 @@
         }
 
         function loadSettings() {
-            const repo = localStorage.getItem(REPO_KEY) || '';
-            const token = localStorage.getItem(TOKEN_KEY) || '';
-            const imgbb = localStorage.getItem(IMGBB_KEY) || '';
-            repoInput.value = repo;
-            tokenInput.value = token;
-            imgbbKeyInput.value = imgbb;
+            // 只有当 localStorage 有值时才覆盖，否则保留 HTML 中的默认值
+            const repo = localStorage.getItem(REPO_KEY);
+            const token = localStorage.getItem(TOKEN_KEY);
+            const imgbb = localStorage.getItem(IMGBB_KEY);
+            
+            if (repo !== null) repoInput.value = repo;
+            if (token !== null) tokenInput.value = token;
+            if (imgbb !== null) imgbbKeyInput.value = imgbb;
+            
             updateSettingsStatus();
             updateClearButtonVisibility();
         }
@@ -682,7 +680,6 @@
             }
             uploadStatus.textContent = '上传中...';
             uploadStatus.className = 'upload-status loading';
-            // 显示进度条
             showProgress();
 
             const formData = new FormData();
@@ -705,7 +702,6 @@
                 uploadStatus.textContent = '❌ ' + err.message;
                 uploadStatus.className = 'upload-status error';
             } finally {
-                // 隐藏进度条
                 hideProgress();
             }
         });
