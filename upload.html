@@ -124,7 +124,7 @@
             text-decoration: none;
         }
 
-        /* 头像区域 - 自定义文件选择按钮，完全控制布局 */
+        /* 头像区域 */
         .avatar-zone {
             display: flex;
             align-items: center;
@@ -208,7 +208,6 @@
             color: #2b6ef0;
         }
 
-        /* 进度条容器 */
         .progress-container {
             width: 100%;
             height: 4px;
@@ -265,6 +264,18 @@
         .avatar-preview-wrap input[type="url"]:focus {
             border-color: #2b6ef0;
             box-shadow: 0 0 0 3px rgba(43, 110, 240, 0.10);
+        }
+
+        /* 支付状态下拉框 */
+        .field select.status-select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 1px solid #dce0e6;
+            border-radius: 10px;
+            background: #f8fafc;
+            outline: none;
+            appearance: auto;
         }
 
         .btn-primary {
@@ -493,6 +504,14 @@
         </div>
 
         <div class="field">
+            <label>支付状态 <span class="required">*</span></label>
+            <select id="statusInput" class="status-select">
+                <option value="未付款">未付款</option>
+                <option value="已付款">已付款</option>
+            </select>
+        </div>
+
+        <div class="field">
             <label>头像照片</label>
             <div class="avatar-zone">
                 <span class="file-btn" id="fileSelectBtn">选择文件</span>
@@ -546,6 +565,7 @@
         const genderInput = document.getElementById('genderInput');
         const idNumberInput = document.getElementById('idNumberInput');
         const dateInput = document.getElementById('dateInput');
+        const statusInput = document.getElementById('statusInput');
         const avatarFile = document.getElementById('avatarFile');
         const fileSelectBtn = document.getElementById('fileSelectBtn');
         const fileName = document.getElementById('fileName');
@@ -607,7 +627,6 @@
         }
 
         function loadSettings() {
-            // 只有当 localStorage 有值时才覆盖，否则保留 HTML 中的默认值
             const repo = localStorage.getItem(REPO_KEY);
             const token = localStorage.getItem(TOKEN_KEY);
             const imgbb = localStorage.getItem(IMGBB_KEY);
@@ -759,6 +778,7 @@
                         genderInput.value = '男';
                         idNumberInput.value = '';
                         dateInput.value = today;
+                        statusInput.value = '未付款';
                         avatarInput.value = '';
                         avatarPreview.style.display = 'none';
                         avatarFile.value = '';
@@ -803,6 +823,7 @@
             const gender = genderInput.value;
             const idNumber = idNumberInput.value.trim();
             let date = dateInput.value || today;
+            const status = statusInput.value;
             const avatar = avatarInput.value.trim() || '';
 
             if (!name || !idNumber) {
@@ -818,6 +839,7 @@
             body += `性别：${gender}\n`;
             body += `身份证：${idNumber}\n`;
             body += `体检日期：${date}\n`;
+            body += `支付状态：${status}\n`;
             if (avatar) body += `头像图片：${avatar}\n`;
             body += `提交于：${new Date().toLocaleString('zh-CN')}`;
 
