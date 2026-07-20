@@ -399,10 +399,9 @@
     </div>
 
     <div class="section">
-        <!-- ===== 系统配置标题 + 管理入口（同一行） ===== -->
         <div class="section-title">
             <span>⚙️ 系统配置 <span class="badge">仅保存在本机</span></span>
-            <a href="manage.html" class="btn-manage">📋 管理数据</a>
+            <a href="manage.html" class="btn-manage">管理页</a>
         </div>
 
         <div class="settings-grid">
@@ -578,7 +577,12 @@
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
 
-        const today = new Date().toISOString().split('T')[0];
+        // ========== 修正日期：使用本地时间，解决时区问题 ==========
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${day}`;
         dateInput.value = today;
 
         let lastIssueTitle = '';
