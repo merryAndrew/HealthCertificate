@@ -12,6 +12,7 @@ TOKEN = os.getenv('GITHUB_TOKEN')
 USER = REPO.split('/')[0] if REPO else 'merryAndrew'
 REPO_NAME = REPO.split('/')[1] if REPO and '/' in REPO else 'HealthCertificate'
 
+# 只获取未关闭的 Issue
 url = f'https://api.github.com/repos/{REPO}/issues?state=open&per_page=100'
 headers = {'Authorization': f'token {TOKEN}', 'Accept': 'application/vnd.github.v3+json'}
 issues = requests.get(url, headers=headers).json()
@@ -44,8 +45,8 @@ def format_date(raw_date):
     return raw_date
 
 def build_card(issue, style='A'):
-    # Issue 标题单独存储为"卡片标题"，不再与姓名混淆
-    card_title = issue['title']
+    # Issue 标题 = 姓名
+    name = issue['title']
     body = issue['body'] or ''
     comments_url = issue['comments_url']
     comments = requests.get(comments_url, headers=headers).json()
@@ -53,10 +54,7 @@ def build_card(issue, style='A'):
     for comment in comments:
         all_text += ' ' + comment.get('body', '')
 
-    # 从正文提取姓名（独立于标题）
-    name_match = re.search(r'姓名[：:]\s*(.+)', all_text)
-    name = name_match.group(1).strip() if name_match else card_title
-
+    # 提取所有字段
     gender_match = re.search(r'性别[：:]\s*(.+)', all_text)
     gender = gender_match.group(1).strip() if gender_match else '男'
 
@@ -73,29 +71,45 @@ def build_card(issue, style='A'):
     hospital_match = re.search(r'体检单位[：:]\s*(.+)', all_text)
     hospital = hospital_match.group(1).strip() if hospital_match else '广州东仁医院'
 
-    middle_text_match = re.search(r'中间文字[：:]\s*(.+)', all_text)
-    middle_text = middle_text_match.group(1).strip() if middle_text_match else '广东省食品从业人员'
+    # 卡片1标题（独立于 Issue 标题）
+    card1_title_match = re.search(r'卡片1标题[：:]\s*(.+)', all_text)
+    card1_title = card1_title_match.group(1).strip() if card1_title_match else '广东省食品从业人员健康证明'
 
-    bottom_text_match = re.search(r'底部文字[：:]\s*(.+)', all_text)
-    bottom_text = bottom_text_match.group(1).strip() if bottom_text_match else '此健康信息已上报平台'
+    # 卡片2中间文字（独立编辑）
+    card2_text_match = re.search(r'卡片2文字[：:]\s*(.+)', all_text)
+    card2_text = card2_text_match.group(1).strip() if card2_text_match else '广东省食品从业人员'
+
+    # 卡片3底部文字
+    card3_text_match = re.search(r'卡片3文字[：:]\s*(.+)', all_text)
+    card3_text = card3_text_match.group(1).strip() if card3_text_match else '此健康信息已上报平台'
+
+    # 隐藏卡片列表
+    hidden_match = re.search(r'隐藏卡片[：:]\s*(.+)', all_text)
+    hidden_list = hidden_match.group(1).strip() if hidden_match else ''
+    hidden_cards = [h.strip() for h in hidden_list.split('|') if h.strip()]
 
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
-    print(f"📸 标题 '{card_title}' 的图片链接: {img_url}")
+    print(f"📸 姓名 '{name}' 的图片链接: {img_url}")
 
-    encoded_title = urllib.parse.quote(card_title)
-    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
+    encoded_name = urllib.parse.quote(name)
+    page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_name}'
     qr = qrcode.make(page_url)
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
+    # 判断卡片是否隐藏
+    is_hidden = style in hidden_cards
+
     if style == 'A':
+        if is_hidden:
+            return ''  # A版隐藏则返回空
         return f'''
-        <div class="cert-wrapper" data-title="{card_title}" data-issue-number="{issue['number']}">
+        <div class="cert-wrapper" data-title="{name}" data-issue-number="{issue['number']}" data-card-type="A">
             <div class="cert-module top-card">
-                <div class="top-title">广东省食品从业人员健康证明</div>
+                <div class="top-title">{card1_title}</div>
                 <div class="top-content">
                     <div class="text-container">
                         <div class="info-line">
@@ -134,7 +148,7 @@ def build_card(issue, style='A'):
                 </div>
             </div>
             <div class="cert-module middle-card">
-                <div class="middle-line">{middle_text}</div>
+                <div class="middle-line">{card2_text}</div>
                 <div class="middle-line">健康证明</div>
             </div>
             <div class="bottom-card">
@@ -149,49 +163,46 @@ def build_card(issue, style='A'):
                         <i class="fas fa-exclamation-circle exclamation-icon"></i>
                         关于申请实体证明通知：
                     </div>
-                    <div class="notice-content">目前实体证明申请的入口已经关闭，全面推广电子证，请广大从业人员和用人单位积极使用。如对查询信息存疑，请与体检机构联系。</div>
+                    <div class="notice-content">{card3_text}</div>
                 </div>
             </div>
         </div>
         '''
-    else:
+    elif style == 'B':
+        if is_hidden:
+            return ''
         return f'''
-        <div class="cert-wrapper" data-title="{card_title}" data-issue-number="{issue['number']}" style="position: relative; padding-bottom: 70px;">
-            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
-                <input type="checkbox" class="card-select" data-issue="{issue['number']}" data-title="{card_title}" />
-            </div>
-
+        <div class="cert-wrapper" data-title="{name}" data-issue-number="{issue['number']}" data-card-type="B">
             <div class="cert-module top-card">
-                <div class="top-title" id="title_{issue['number']}">广东省食品从业人员健康证明</div>
+                <div class="top-title">{card1_title}</div>
                 <div class="top-content">
                     <div class="text-container">
                         <div class="info-line">
                             <span class="label">姓 名</span>
                             <span class="colon">∶</span>
-                            <span class="content" id="name_{issue['number']}">{name}</span>
-                        </div>
-                        <div class="info-line">
+                            <span class="content">{name}</span>
+                            <span class="gender-separator"></span>
                             <span class="label">性 别</span>
                             <span class="colon">∶</span>
-                            <span class="content" id="gender_{issue['number']}">{gender}</span>
+                            <span class="content">{gender}</span>
                         </div>
                         <div class="id-group">
                             <div class="info-line">
                                 <span class="label">身份证号码</span>
                                 <span class="colon">∶</span>
-                                <span class="content" id="id_{issue['number']}">{id_num}</span>
+                                <span class="content">{id_num}</span>
                             </div>
                             <div class="info-line">(或其它有效证明)</div>
                         </div>
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content" id="hospital_{issue['number']}">{hospital}</span>
+                            <span class="content">{hospital}</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
                             <span class="colon">∶</span>
-                            <span class="content" id="date_{issue['number']}">{date_display}</span>
+                            <span class="content">{date_display}</span>
                         </div>
                     </div>
                     <div class="photo">
@@ -200,7 +211,7 @@ def build_card(issue, style='A'):
                 </div>
             </div>
             <div class="cert-module middle-card">
-                <div class="middle-line" id="middleText_{issue['number']}">{middle_text}</div>
+                <div class="middle-line">{card2_text}</div>
                 <div class="middle-line">健康证明</div>
             </div>
             <div class="bottom-card">
@@ -208,26 +219,92 @@ def build_card(issue, style='A'):
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title" id="bottomText_{issue['number']}">{bottom_text}</div>
+                    <div class="qrcode-title">{card3_text}</div>
                 </div>
             </div>
-
-            <div class="button-group" id="buttonGroup_{issue['number']}" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
-                <button class="edit-btn" id="editBtn_{issue['number']}" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
-                <button class="save-btn" id="saveBtn_{issue['number']}" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
-                <button class="cancel-btn" id="cancelBtn_{issue['number']}" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+        </div>
+        '''
+    else:  # C版
+        if is_hidden:
+            return ''
+        return f'''
+        <div class="cert-wrapper" data-title="{name}" data-issue-number="{issue['number']}" data-card-type="C">
+            <div class="cert-module top-card">
+                <div class="top-title">{card1_title}</div>
+                <div class="top-content">
+                    <div class="text-container">
+                        <div class="info-line">
+                            <span style="font-weight: bold;">姓 名</span>
+                            <span>∶</span>
+                            <span>{name}</span>
+                            <span class="gender-separator" style="font-weight: bold;">性 别</span>
+                            <span>∶</span>
+                            <span>{gender}</span>
+                        </div>
+                        <div class="id-group">
+                            <div class="info-line">
+                                <span style="font-weight: bold;">身份证号码</span>
+                                <span>∶</span>
+                                <span>{id_num}</span>
+                            </div>
+                            <div class="info-line">(或其它有效证明)</div>
+                        </div>
+                        <div class="info-line">
+                            <span style="font-weight: bold;">体检单位</span>
+                            <span>∶</span>
+                            <span>{hospital}</span>
+                        </div>
+                        <div class="info-line last-line">
+                            <span style="font-weight: bold;">体检日期</span>
+                            <span>∶</span>
+                            <span>{date_display}</span>
+                        </div>
+                    </div>
+                    <div class="photo">
+                        <img src="{img_url}" alt="持证人照片">
+                    </div>
+                </div>
             </div>
-            <div class="edit-status" id="editStatus_{issue['number']}" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
+            <div class="cert-module middle-card">
+                <div class="middle-line">{card2_text}</div>
+                <div class="middle-line">健康证明</div>
+            </div>
+            <div class="bottom-card">
+                <div class="qrcode-area">
+                    <div class="qrcode-img">
+                        <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
+                    </div>
+                    <div class="qrcode-title">{card3_text}</div>
+                </div>
+            </div>
         </div>
         '''
 
 cards_A = []
 cards_B = []
+cards_C = []
 for issue in issues:
     if 'pull_request' in issue:
         continue
-    cards_A.append(build_card(issue, 'A'))
-    cards_B.append(build_card(issue, 'B'))
+    card_a = build_card(issue, 'A')
+    card_b = build_card(issue, 'B')
+    card_c = build_card(issue, 'C')
+    if card_a:
+        cards_A.append(card_a)
+    if card_b:
+        cards_B.append(card_b)
+    if card_c:
+        cards_C.append(card_c)
+
+# 合并三套卡片，按顺序排列
+all_cards = []
+for i in range(max(len(cards_A), len(cards_B), len(cards_C))):
+    if i < len(cards_A):
+        all_cards.append(cards_A[i])
+    if i < len(cards_B):
+        all_cards.append(cards_B[i])
+    if i < len(cards_C):
+        all_cards.append(cards_C[i])
 
 html_B = f'''<!DOCTYPE html>
 <html lang="zh-CN">
@@ -239,7 +316,7 @@ html_B = f'''<!DOCTYPE html>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }}
-        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; position: relative; padding-bottom: 70px; }}
+        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; position: relative; padding-bottom: 50px; }}
         .cert-module {{ background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }}
         .top-card {{ font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }}
         .top-title {{ text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }}
@@ -251,8 +328,10 @@ html_B = f'''<!DOCTYPE html>
         .id-group {{ margin-bottom: 6px; }}
         .id-group .info-line {{ margin-bottom: 0; line-height: 1.2; }}
         .last-line {{ margin-top: auto; margin-bottom: 6px; }}
-        .photo {{ width: 70px; height: 90px; border: 1px solid #ddd; margin-left: 10px; }}
+        .photo {{ width: 70px; height: 90px; border: 1px solid #ddd; margin-left: 10px; position: relative; overflow: visible; }}
         .photo img {{ width: 100%; height: 100%; object-fit: cover; }}
+        .photo .seal-container {{ position: absolute; top: 44px; left: -47px; z-index: 999; }}
+        .photo .seal-img {{ width: 63px; height: 63px; object-fit: contain; opacity: 1; display: block; }}
         .middle-card {{ display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; color: #333; text-align: center; width: 100%; height: 180px; font-weight: bold; }}
         .middle-line {{ margin: 5px 0; }}
         .bottom-card {{ border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 11px; text-align: center; background: #f8f8f8; box-shadow: 0 8px 16px rgba(0,0,0,0.35); }}
@@ -261,161 +340,28 @@ html_B = f'''<!DOCTYPE html>
         .qrcode-img img {{ width: 100%; height: 100%; object-fit: contain; }}
         .qrcode-title {{ color: #333; margin-bottom: 0; font-size: 13px; font-weight: bold; }}
         
-        .editable-field {{
-            border: 1px dashed #2b6ef0;
-            border-radius: 4px;
-            padding: 2px 6px;
-            background: #fff;
-            min-width: 40px;
-            display: inline-block;
-        }}
-        .editable-field:focus {{
-            outline: none;
-            border-color: #2f9e44;
-            box-shadow: 0 0 0 2px rgba(47, 158, 68, 0.2);
-        }}
-        .not-found {{
-            text-align: center;
-            padding: 40px 20px;
-            font-size: 18px;
-            color: #666;
-            background: #f8f8f8;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }}
-        .admin-bar {{
-            background: #fff;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 10px;
-        }}
-        .admin-bar input[type="text"] {{
-            flex: 1;
-            min-width: 120px;
-            padding: 8px 12px;
-            border: 1px solid #dce0e6;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-        }}
-        .admin-bar input:focus {{
-            border-color: #2b6ef0;
-        }}
-        .admin-bar .btn-danger {{
-            background: #e53e3e;
-            color: #fff;
-            border: none;
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 13px;
-            cursor: pointer;
-        }}
-        .admin-bar .btn-danger:disabled {{
-            opacity: 0.5;
-            cursor: not-allowed;
-        }}
-        .admin-bar .checkbox-container {{
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-        }}
-        .admin-bar .checkbox-container input[type="checkbox"] {{
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }}
-        .admin-bar .badge {{
-            font-size: 12px;
-            color: #666;
-        }}
-        .card-checkbox {{
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            z-index: 25;
-        }}
-        .card-checkbox input[type="checkbox"] {{
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }}
-        .button-group button {{
-            border: none;
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 13px;
-            cursor: pointer;
-        }}
-        .edit-status {{
-            position: absolute;
-            bottom: 50px;
-            right: 12px;
-            font-size: 12px;
-            z-index: 20;
-            display: none;
-        }}
+        .editable-field {{ border: 1px dashed #2b6ef0; border-radius: 4px; padding: 2px 6px; background: #fff; min-width: 40px; display: inline-block; }}
+        .editable-field:focus {{ outline: none; border-color: #2f9e44; box-shadow: 0 0 0 2px rgba(47, 158, 68, 0.2); }}
+        .not-found {{ text-align: center; padding: 40px 20px; font-size: 18px; color: #666; background: #f8f8f8; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }}
+        .admin-bar {{ background: #fff; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }}
+        .admin-bar input[type="text"] {{ flex: 1; min-width: 120px; padding: 8px 12px; border: 1px solid #dce0e6; border-radius: 8px; font-size: 14px; outline: none; }}
+        .admin-bar input:focus {{ border-color: #2b6ef0; }}
+        .admin-bar .btn-danger {{ background: #e53e3e; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; }}
+        .admin-bar .btn-danger:disabled {{ opacity: 0.5; cursor: not-allowed; }}
+        .admin-bar .btn-success {{ background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; }}
+        .admin-bar .checkbox-container {{ display: flex; align-items: center; gap: 6px; font-size: 13px; }}
+        .admin-bar .checkbox-container input[type="checkbox"] {{ width: 16px; height: 16px; cursor: pointer; }}
+        .admin-bar .badge {{ font-size: 12px; color: #666; }}
+        .card-checkbox {{ position: absolute; top: 12px; left: 12px; z-index: 25; }}
+        .card-checkbox input[type="checkbox"] {{ width: 18px; height: 18px; cursor: pointer; }}
+        .button-group {{ position: absolute; bottom: 10px; right: 12px; display: flex; gap: 8px; z-index: 30; }}
+        .button-group button {{ border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; }}
+        .edit-status {{ position: absolute; bottom: 45px; right: 12px; font-size: 12px; z-index: 20; display: none; }}
         .edit-status.error {{ color: #e53e3e; }}
         .edit-status.success {{ color: #2f9e44; }}
-        .delete-dialog {{
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }}
-        .delete-dialog-box {{
-            background: #fff;
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 400px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }}
-        .delete-dialog-box h3 {{
-            margin-bottom: 16px;
-            font-size: 18px;
-        }}
-        .delete-dialog-box .card-item {{
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }}
-        .delete-dialog-box .card-item input[type="checkbox"] {{
-            width: 18px;
-            height: 18px;
-        }}
-        .delete-dialog-box .btn-row {{
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-            justify-content: flex-end;
-        }}
-        .delete-dialog-box .btn-row button {{
-            padding: 8px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-        }}
-        .delete-dialog-box .btn-confirm {{
-            background: #e53e3e;
-            color: #fff;
-        }}
-        .delete-dialog-box .btn-cancel-dialog {{
-            background: #e8ecf2;
-            color: #333;
-        }}
+        .hide-btn {{ position: absolute; top: 12px; right: 12px; z-index: 15; background: #e53e3e; color: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 14px; cursor: pointer; display: none; align-items: center; justify-content: center; line-height: 1; }}
+        .hide-btn:hover {{ background: #c0392b; }}
+        .admin-bar .btn-orange {{ background: #f39c12; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; }}
     </style>
 </head>
 <body>
@@ -426,12 +372,13 @@ html_B = f'''<!DOCTYPE html>
                 <input type="checkbox" id="selectAll" />
                 <label for="selectAll">全选</label>
             </div>
-            <button class="btn-danger" id="batchDeleteBtn">删除选中</button>
+            <button class="btn-danger" id="batchDeleteBtn">删除数据</button>
+            <button class="btn-orange" id="showAllBtn">显示全部</button>
             <span class="badge" id="batchStatus"></span>
         </div>
         
         <div id="cardsContainer">
-            {''.join(cards_B)}
+            {''.join(all_cards)}
         </div>
         
         <div id="notFoundMessage" class="not-found" style="display: none;">未找到该健康证</div>
@@ -450,12 +397,26 @@ html_B = f'''<!DOCTYPE html>
             const searchInput = document.getElementById('searchInput');
             const selectAll = document.getElementById('selectAll');
             const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+            const showAllBtn = document.getElementById('showAllBtn');
             const batchStatus = document.getElementById('batchStatus');
+            
+            // 收集同一人的所有卡片
+            function groupByPerson() {{
+                const groups = {{}};
+                wrappers.forEach(w => {{
+                    const title = w.dataset.title;
+                    if (!groups[title]) groups[title] = [];
+                    groups[title].push(w);
+                }});
+                return groups;
+            }}
             
             // ===== 管理员模式 =====
             if (isAdmin) {{
                 adminBar.style.display = 'flex';
                 document.querySelectorAll('.card-checkbox').forEach(cb => cb.style.display = 'block');
+                document.querySelectorAll('.hide-btn').forEach(btn => btn.style.display = 'flex');
+                
                 if (idParam) {{
                     let decodedId = '';
                     try {{ decodedId = decodeURIComponent(idParam); }} catch(e) {{ decodedId = idParam; }}
@@ -533,10 +494,12 @@ html_B = f'''<!DOCTYPE html>
             
             function updateBatchStatus() {{
                 const checked = document.querySelectorAll('.card-select:checked');
-                batchStatus.textContent = checked.length > 0 ? `已选 ${{checked.length}} 张` : '';
+                const persons = new Set();
+                checked.forEach(cb => persons.add(cb.dataset.title));
+                batchStatus.textContent = checked.length > 0 ? `已选 ${{checked.length}} 张卡片 (共 ${{persons.size}} 人)` : '';
             }}
             
-            // ===== 批量删除 - 弹窗选择 =====
+            // ===== 删除数据 =====
             if (batchDeleteBtn) {{
                 batchDeleteBtn.addEventListener('click', function() {{
                     const checked = document.querySelectorAll('.card-select:checked');
@@ -544,52 +507,9 @@ html_B = f'''<!DOCTYPE html>
                         alert('请至少选择一张卡片');
                         return;
                     }}
-                    // 显示删除弹窗
-                    showDeleteDialog(checked);
-                }});
-            }}
-            
-            function showDeleteDialog(checkedItems) {{
-                // 构建弹窗
-                const dialog = document.createElement('div');
-                dialog.className = 'delete-dialog';
-                let html = `<div class="delete-dialog-box">
-                    <h3>选择要删除的卡片</h3>`;
-                checkedItems.forEach(cb => {{
-                    const title = cb.dataset.title || '未命名';
-                    html += `<div class="card-item">
-                        <input type="checkbox" class="delete-card-select" data-issue="${{cb.dataset.issue}}" checked />
-                        <span>${{title}}</span>
-                    </div>`;
-                }});
-                html += `<div class="card-item" style="border-bottom: none;">
-                        <input type="checkbox" id="deleteSelectAll" checked />
-                        <label for="deleteSelectAll">全选</label>
-                    </div>
-                    <div class="btn-row">
-                        <button class="btn-cancel-dialog" onclick="this.closest('.delete-dialog').remove()">取消</button>
-                        <button class="btn-confirm" id="confirmDeleteBtn">确认删除</button>
-                    </div>
-                </div>`;
-                dialog.innerHTML = html;
-                document.body.appendChild(dialog);
-                
-                // 弹窗内全选
-                const delSelectAll = dialog.querySelector('#deleteSelectAll');
-                if (delSelectAll) {{
-                    delSelectAll.addEventListener('change', function() {{
-                        dialog.querySelectorAll('.delete-card-select').forEach(cb => cb.checked = this.checked);
-                    }});
-                }}
-                
-                // 确认删除
-                dialog.querySelector('#confirmDeleteBtn').addEventListener('click', function() {{
-                    const selected = dialog.querySelectorAll('.delete-card-select:checked');
-                    if (selected.length === 0) {{
-                        alert('请至少选择一张卡片');
-                        return;
-                    }}
-                    if (!confirm(`确定要删除选中的 ${{selected.length}} 张卡片吗？此操作不可恢复！`)) return;
+                    const persons = new Set();
+                    checked.forEach(cb => persons.add(cb.dataset.title));
+                    if (!confirm(`确定要删除选中的 ${{persons.size}} 个用户的所有数据吗？此操作不可恢复！`)) return;
                     
                     let token = localStorage.getItem('github_token');
                     if (!token) {{
@@ -605,15 +525,17 @@ html_B = f'''<!DOCTYPE html>
                     batchDeleteBtn.disabled = true;
                     batchStatus.textContent = '⏳ 删除中...';
                     batchStatus.style.color = '#2b6ef0';
-                    dialog.remove();
                     
                     const repo = 'merryAndrew/HealthCertificate';
                     let completed = 0;
                     let failed = 0;
-                    const total = selected.length;
+                    const total = persons.size;
                     
-                    selected.forEach(cb => {{
-                        const issueNumber = cb.dataset.issue;
+                    persons.forEach(name => {{
+                        // 找到该人的所有卡片，取第一个的 issue-number
+                        const wrapper = document.querySelector(`.cert-wrapper[data-title="${{name}}"]`);
+                        if (!wrapper) {{ failed++; return; }}
+                        const issueNumber = wrapper.dataset.issueNumber;
                         const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
                         fetch(url, {{
                             method: 'PATCH',
@@ -631,9 +553,87 @@ html_B = f'''<!DOCTYPE html>
                         .catch(() => failed++)
                         .finally(() => {{
                             if (completed + failed === total) {{
-                                batchStatus.textContent = `✅ 已删除 ${{completed}} 张，失败 ${{failed}} 张，正在刷新...`;
+                                batchStatus.textContent = `✅ 已删除 ${{completed}} 人，失败 ${{failed}} 人，正在刷新...`;
                                 batchStatus.style.color = '#2f9e44';
                                 batchDeleteBtn.disabled = false;
+                                setTimeout(() => location.reload(), 2000);
+                            }}
+                        }});
+                    }});
+                }});
+            }}
+            
+            // ===== 显示全部（取消隐藏） =====
+            if (showAllBtn) {{
+                showAllBtn.addEventListener('click', function() {{
+                    const checked = document.querySelectorAll('.card-select:checked');
+                    if (checked.length === 0) {{
+                        alert('请至少选择一张卡片');
+                        return;
+                    }}
+                    const persons = new Set();
+                    checked.forEach(cb => persons.add(cb.dataset.title));
+                    if (!confirm(`确定要恢复选中的 ${{persons.size}} 个用户的所有卡片吗？`)) return;
+                    
+                    let token = localStorage.getItem('github_token');
+                    if (!token) {{
+                        token = prompt('请输入您的 GitHub Token（操作需要）:');
+                        if (token) localStorage.setItem('github_token', token);
+                    }}
+                    if (!token) {{
+                        batchStatus.textContent = '❌ 需要 Token';
+                        batchStatus.style.color = '#e53e3e';
+                        return;
+                    }}
+                    
+                    showAllBtn.disabled = true;
+                    batchStatus.textContent = '⏳ 操作中...';
+                    batchStatus.style.color = '#2b6ef0';
+                    
+                    const repo = 'merryAndrew/HealthCertificate';
+                    let completed = 0;
+                    let failed = 0;
+                    const total = persons.size;
+                    
+                    persons.forEach(name => {{
+                        const wrapper = document.querySelector(`.cert-wrapper[data-title="${{name}}"]`);
+                        if (!wrapper) {{ failed++; return; }}
+                        const issueNumber = wrapper.dataset.issueNumber;
+                        // 获取当前 Issue 正文
+                        const getUrl = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
+                        fetch(getUrl, {{
+                            headers: {{
+                                'Authorization': `Bearer ${{token}}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                            }}
+                        }})
+                        .then(res => res.json())
+                        .then(data => {{
+                            let body = data.body || '';
+                            // 移除隐藏卡片字段
+                            body = body.replace(/\\n?隐藏卡片[：:][^\\n]*/, '');
+                            body = body.replace(/隐藏卡片[：:][^\\n]*\\n?/, '');
+                            // 更新 Issue
+                            return fetch(getUrl, {{
+                                method: 'PATCH',
+                                headers: {{
+                                    'Authorization': `Bearer ${{token}}`,
+                                    'Accept': 'application/vnd.github.v3+json',
+                                    'Content-Type': 'application/json',
+                                }},
+                                body: JSON.stringify({{ body: body }})
+                            }});
+                        }})
+                        .then(res => {{
+                            if (!res.ok) throw new Error('失败');
+                            completed++;
+                        }})
+                        .catch(() => failed++)
+                        .finally(() => {{
+                            if (completed + failed === total) {{
+                                batchStatus.textContent = `✅ 已恢复 ${{completed}} 人，失败 ${{failed}} 人，正在刷新...`;
+                                batchStatus.style.color = '#2f9e44';
+                                showAllBtn.disabled = false;
                                 setTimeout(() => location.reload(), 2000);
                             }}
                         }});
@@ -653,9 +653,90 @@ html_B = f'''<!DOCTYPE html>
                 const dateEl = document.getElementById('date_' + issueNumber);
                 const middleTextEl = document.getElementById('middleText_' + issueNumber);
                 const bottomTextEl = document.getElementById('bottomText_' + issueNumber);
+                const card1TitleEl = document.getElementById('card1Title_' + issueNumber);
+                const card2TextEl = document.getElementById('card2Text_' + issueNumber);
+                const card3TextEl = document.getElementById('card3Text_' + issueNumber);
                 const saveBtn = document.getElementById('saveBtn_' + issueNumber);
                 const cancelBtn = document.getElementById('cancelBtn_' + issueNumber);
                 const editStatus = document.getElementById('editStatus_' + issueNumber);
+                const hideBtn = document.getElementById('hideBtn_' + issueNumber);
+                
+                // 隐藏按钮
+                if (hideBtn) {{
+                    hideBtn.addEventListener('click', function() {{
+                        const cardType = wrapper.dataset.cardType;
+                        if (!confirm(`确定要隐藏这张 ${{cardType}} 版卡片吗？`)) return;
+                        let token = localStorage.getItem('github_token');
+                        if (!token) {{
+                            token = prompt('请输入您的 GitHub Token（操作需要）:');
+                            if (token) localStorage.setItem('github_token', token);
+                        }}
+                        if (!token) {{
+                            if (editStatus) {{
+                                editStatus.textContent = '❌ 需要 Token';
+                                editStatus.className = 'edit-status error';
+                                editStatus.style.display = 'block';
+                            }}
+                            return;
+                        }}
+                        const repo = 'merryAndrew/HealthCertificate';
+                        const getUrl = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
+                        fetch(getUrl, {{
+                            headers: {{
+                                'Authorization': `Bearer ${{token}}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                            }}
+                        }})
+                        .then(res => res.json())
+                        .then(data => {{
+                            let body = data.body || '';
+                            let hidden = '';
+                            const hiddenMatch = body.match(/隐藏卡片[：:]\s*(.+)/);
+                            if (hiddenMatch) {{
+                                let existing = hiddenMatch[1].trim();
+                                if (existing) {{
+                                    const parts = existing.split('|').map(s => s.trim());
+                                    if (!parts.includes(cardType)) {{
+                                        parts.push(cardType);
+                                        hidden = parts.join('|');
+                                    }} else {{
+                                        hidden = existing;
+                                    }}
+                                }} else {{
+                                    hidden = cardType;
+                                }}
+                                body = body.replace(/隐藏卡片[：:][^\\n]*/, `隐藏卡片：${{hidden}}`);
+                            }} else {{
+                                body += `\\n隐藏卡片：${{cardType}}`;
+                            }}
+                            return fetch(getUrl, {{
+                                method: 'PATCH',
+                                headers: {{
+                                    'Authorization': `Bearer ${{token}}`,
+                                    'Accept': 'application/vnd.github.v3+json',
+                                    'Content-Type': 'application/json',
+                                }},
+                                body: JSON.stringify({{ body: body }})
+                            }});
+                        }})
+                        .then(res => {{
+                            if (!res.ok) throw new Error('失败');
+                            if (editStatus) {{
+                                editStatus.textContent = '✅ 已隐藏，正在刷新...';
+                                editStatus.className = 'edit-status success';
+                                editStatus.style.display = 'block';
+                            }}
+                            setTimeout(() => location.reload(), 1500);
+                        }})
+                        .catch(err => {{
+                            if (editStatus) {{
+                                editStatus.textContent = '❌ ' + err.message;
+                                editStatus.className = 'edit-status error';
+                                editStatus.style.display = 'block';
+                            }}
+                        }});
+                    }});
+                }}
                 
                 btn.addEventListener('click', function() {{
                     const isEditing = btn.textContent === '取消编辑';
@@ -663,7 +744,7 @@ html_B = f'''<!DOCTYPE html>
                         btn.textContent = '编辑';
                         saveBtn.style.display = 'none';
                         cancelBtn.style.display = 'none';
-                        [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {{
+                        [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl, card1TitleEl, card2TextEl, card3TextEl].forEach(el => {{
                             if (el) {{
                                 el.contentEditable = false;
                                 el.classList.remove('editable-field');
@@ -682,7 +763,7 @@ html_B = f'''<!DOCTYPE html>
                     btn.textContent = '取消编辑';
                     saveBtn.style.display = 'inline-block';
                     cancelBtn.style.display = 'inline-block';
-                    [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {{
+                    [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl, card1TitleEl, card2TextEl, card3TextEl].forEach(el => {{
                         if (el) {{
                             el.contentEditable = true;
                             el.classList.add('editable-field');
@@ -709,7 +790,6 @@ html_B = f'''<!DOCTYPE html>
                 
                 if (saveBtn) {{
                     saveBtn.addEventListener('click', function() {{
-                        const newTitle = titleEl ? titleEl.textContent.trim() : '广东省食品从业人员健康证明';
                         const newName = nameEl ? nameEl.textContent.trim() : '';
                         let newGender = '';
                         const genderSelect = genderEl ? genderEl.querySelector('.gender-select') : null;
@@ -723,8 +803,10 @@ html_B = f'''<!DOCTYPE html>
                         const newDate = dateEl ? dateEl.textContent.trim() : '';
                         const newMiddle = middleTextEl ? middleTextEl.textContent.trim() : '广东省食品从业人员';
                         const newBottom = bottomTextEl ? bottomTextEl.textContent.trim() : '此健康信息已上报平台';
+                        const newCard1Title = card1TitleEl ? card1TitleEl.textContent.trim() : '广东省食品从业人员健康证明';
+                        const newCard2Text = card2TextEl ? card2TextEl.textContent.trim() : '广东省食品从业人员';
+                        const newCard3Text = card3TextEl ? card3TextEl.textContent.trim() : '此健康信息已上报平台';
                         
-                        // 获取当前 Issue 的原有头像图片
                         const imgUrl = wrapper.querySelector('.photo img')?.src || '';
                         let avatarField = '';
                         if (imgUrl && !imgUrl.includes('placeholder')) {{
@@ -744,7 +826,7 @@ html_B = f'''<!DOCTYPE html>
                         
                         const repo = 'merryAndrew/HealthCertificate';
                         const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
-                        const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检单位：${{newHospital}}\\n体检日期：${{newDate}}\\n中间文字：${{newMiddle}}\\n底部文字：${{newBottom}}${{avatarField}}`;
+                        const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检单位：${{newHospital}}\\n体检日期：${{newDate}}\\n中间文字：${{newMiddle}}\\n底部文字：${{newBottom}}\\n卡片1标题：${{newCard1Title}}\\n卡片2文字：${{newCard2Text}}\\n卡片3文字：${{newCard3Text}}${{avatarField}}`;
                         
                         editStatus.textContent = '⏳ 保存中...';
                         editStatus.className = 'edit-status';
@@ -756,7 +838,7 @@ html_B = f'''<!DOCTYPE html>
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json',
                             }},
-                            body: JSON.stringify({{ title: newTitle, body: body }})
+                            body: JSON.stringify({{ title: newName, body: body }})
                         }})
                         .then(res => {{
                             if (!res.ok) throw new Error('保存失败: ' + res.status);
@@ -765,7 +847,7 @@ html_B = f'''<!DOCTYPE html>
                         .then(() => {{
                             editStatus.textContent = '✅ 保存成功！正在重新生成...';
                             editStatus.className = 'edit-status success';
-                            [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {{
+                            [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl, card1TitleEl, card2TextEl, card3TextEl].forEach(el => {{
                                 if (el) {{
                                     el.contentEditable = false;
                                     el.classList.remove('editable-field');
@@ -834,7 +916,7 @@ html_A = f'''<!DOCTYPE html>
 </head>
 <body>
     <div class="app-wrapper">
-        {''.join(cards_A)}
+        {''.join(all_cards)}
     </div>
     <script>
         (function() {{
