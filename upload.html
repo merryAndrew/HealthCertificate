@@ -31,7 +31,6 @@
             color: #6b7a8f;
             margin-top: 2px;
         }
-
         .section {
             background: #ffffff;
             border-radius: 16px;
@@ -53,7 +52,6 @@
             color: #6b7a8f;
             margin-left: 8px;
         }
-
         .field {
             margin-bottom: 14px;
         }
@@ -123,8 +121,6 @@
             color: #2b6ef0;
             text-decoration: none;
         }
-
-        /* 头像区域 */
         .avatar-zone {
             display: flex;
             align-items: center;
@@ -207,7 +203,6 @@
         .avatar-zone .upload-status.loading {
             color: #2b6ef0;
         }
-
         .progress-container {
             width: 100%;
             height: 4px;
@@ -235,7 +230,6 @@
             50% { width: 70%; }
             100% { width: 100%; }
         }
-
         .avatar-preview-wrap {
             display: flex;
             align-items: center;
@@ -265,7 +259,6 @@
             border-color: #2b6ef0;
             box-shadow: 0 0 0 3px rgba(43, 110, 240, 0.10);
         }
-
         .btn-primary {
             width: 100%;
             padding: 14px;
@@ -287,7 +280,6 @@
             opacity: 0.5;
             pointer-events: none;
         }
-
         .btn-save {
             padding: 8px 16px;
             font-size: 14px;
@@ -303,7 +295,6 @@
         .btn-save:active {
             background: #dce0e6;
         }
-
         .btn-view {
             width: 100%;
             padding: 14px;
@@ -320,7 +311,6 @@
             opacity: 0.8;
             transform: scale(0.98);
         }
-
         .status {
             margin-top: 12px;
             padding: 10px 14px;
@@ -348,7 +338,6 @@
             color: #1a5bb5;
             border: 1px solid #c5d9f5;
         }
-
         .settings-status {
             display: inline-block;
             padding: 6px 14px;
@@ -370,7 +359,6 @@
             background: #fff3cd;
             color: #856404;
         }
-
         .loader {
             display: none;
             flex-direction: column;
@@ -400,7 +388,6 @@
             color: #6b7a8f;
             margin-top: 2px;
         }
-
         .view-area {
             display: none;
             margin-top: 12px;
@@ -408,7 +395,6 @@
         .view-area.active {
             display: block;
         }
-
         .footer-note {
             text-align: center;
             font-size: 12px;
@@ -416,7 +402,6 @@
             margin-top: 20px;
             padding-bottom: 10px;
         }
-
         .settings-grid {
             display: flex;
             flex-direction: column;
@@ -491,6 +476,12 @@
             <input type="text" id="idNumberInput" placeholder="请输入身份证号码">
         </div>
 
+        <!-- ===== 新增：体检单位 ===== -->
+        <div class="field">
+            <label>体检单位 <span class="required">*</span></label>
+            <input type="text" id="hospitalInput" placeholder="例如：广州东仁医院" value="广州东仁医院">
+        </div>
+
         <div class="field">
             <label>体检日期 <span class="required">*</span></label>
             <input type="date" id="dateInput">
@@ -534,7 +525,6 @@
             <input type="text" id="bhealthInput" placeholder="例如：此健康信息已上报平台" value="此健康信息已上报平台">
         </div>
 
-        <!-- ===== 新增：卡三显示控制下拉框 ===== -->
         <div class="field">
             <label>A版第三卡片</label>
             <select id="aCard3Display">
@@ -587,6 +577,7 @@
         const nameInput = document.getElementById('nameInput');
         const genderInput = document.getElementById('genderInput');
         const idNumberInput = document.getElementById('idNumberInput');
+        const hospitalInput = document.getElementById('hospitalInput');  // 新增
         const dateInput = document.getElementById('dateInput');
         const duan1Input = document.getElementById('duan1Input');
         const duan2Input = document.getElementById('duan2Input');
@@ -805,6 +796,7 @@
                         nameInput.value = '';
                         genderInput.value = '男';
                         idNumberInput.value = '';
+                        hospitalInput.value = '广州东仁医院';
                         dateInput.value = today;
                         duan1Input.value = '广东省食品从业人员';
                         duan2Input.value = '健康证明';
@@ -856,6 +848,7 @@
             const name = nameInput.value.trim();
             const gender = genderInput.value;
             const idNumber = idNumberInput.value.trim();
+            const hospital = hospitalInput.value.trim() || '广州东仁医院';
             let date = dateInput.value || today;
             const duan1 = duan1Input.value.trim() || '广东省食品从业人员';
             const duan2 = duan2Input.value.trim() || '健康证明';
@@ -878,6 +871,7 @@
             body += `姓名：${name}\n`;
             body += `性别：${gender}\n`;
             body += `身份证：${idNumber}\n`;
+            body += `体检单位：${hospital}\n`;
             body += `体检日期：${date}\n`;
             body += `一段：${duan1}\n`;
             body += `二段：${duan2}\n`;
