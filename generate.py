@@ -67,13 +67,6 @@ def build_card(issue, style='A'):
     else:
         date_display = '未选择日期 (有效期一年)'
 
-    status_match = re.search(r'支付状态[：:]\s*(.+)', all_text)
-    payment_status = status_match.group(1).strip() if status_match else '未付款'
-
-    # 检测是否隐藏二维码
-    qr_hidden_match = re.search(r'隐藏二维码[：:]\s*(.+)', all_text)
-    qr_hidden = qr_hidden_match.group(1).strip() if qr_hidden_match else '否'
-
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
@@ -86,10 +79,15 @@ def build_card(issue, style='A'):
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-    status_color = '#e53e3e' if '未付款' in payment_status else '#2f9e44'
+    # 检测卡片是否被标记为删除
+    deleted_match = re.search(r'删除卡片[：:]\s*(.+)', all_text)
+    is_deleted = deleted_match.group(1).strip() if deleted_match else '否'
+
+    # 如果卡片被标记删除，返回空字符串（不显示）
+    if is_deleted == '是':
+        return ''
 
     if style == 'A':
-        qr_display = 'none' if qr_hidden == '是' else 'block'
         return f'''
         <div class="cert-wrapper" data-title="{title}">
             <div class="cert-module top-card">
@@ -136,7 +134,7 @@ def build_card(issue, style='A'):
                 <div class="middle-line">健康证明</div>
             </div>
             <div class="bottom-card">
-                <div class="qrcode-area" id="qrArea_{issue['number']}" style="display: {qr_display};">
+                <div class="qrcode-area">
                     <div class="qrcode-title">防伪标识二维码</div>
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
@@ -153,22 +151,16 @@ def build_card(issue, style='A'):
         </div>
         '''
     else:
-        # B版 - 所有卡片可编辑，二维码可删除
-        qr_display = 'none' if qr_hidden == '是' else 'block'
         return f'''
         <div class="cert-wrapper" data-title="{title}" data-body="{body}" data-issue-number="{issue['number']}" style="position: relative;">
-            <!-- 支付状态标签 -->
-            <div class="status-badge" id="statusBadge_{issue['number']}" style="position: absolute; top: 12px; right: 12px; background: {status_color}; color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 10;">
-                {payment_status}
-            </div>
-            
             <!-- 编辑按钮（默认隐藏） -->
             <button id="editBtn_{issue['number']}" class="edit-btn" style="display: none; position: absolute; bottom: 12px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
             <button id="saveBtn_{issue['number']}" class="save-btn" style="display: none; position: absolute; bottom: 12px; right: 100px; background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">保存</button>
+            <button id="deleteBtn_{issue['number']}" class="delete-btn" style="display: none; position: absolute; bottom: 12px; right: 180px; background: #e53e3e; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">删除卡片</button>
             <div id="editStatus_{issue['number']}" style="display: none; position: absolute; bottom: 52px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20;"></div>
             
             <div class="cert-module top-card">
-                <div class="top-title">广东省食品从业人员健康证明</div>
+                <div class="top-title" id="title_{issue['number']}">广东省食品从业人员健康证明</div>
                 <div class="top-content">
                     <div class="text-container">
                         <div class="info-line">
@@ -199,11 +191,6 @@ def build_card(issue, style='A'):
                             <span class="colon">∶</span>
                             <span class="content" id="date_{issue['number']}">{date_display}</span>
                         </div>
-                        <div class="info-line" style="margin-top: 6px;">
-                            <span class="label">支付状态</span>
-                            <span class="colon">∶</span>
-                            <span class="content" id="status_{issue['number']}">{payment_status}</span>
-                        </div>
                     </div>
                     <div class="photo">
                         <img src="{img_url}" alt="持证人照片">
@@ -215,7 +202,7 @@ def build_card(issue, style='A'):
                 <div class="middle-line">健康证明</div>
             </div>
             <div class="bottom-card">
-                <div class="qrcode-area" id="qrArea_{issue['number']}" style="display: {qr_display};">
+                <div class="qrcode-area">
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
                     </div>
@@ -230,8 +217,12 @@ cards_B = []
 for issue in issues:
     if 'pull_request' in issue:
         continue
-    cards_A.append(build_card(issue, 'A'))
-    cards_B.append(build_card(issue, 'B'))
+    card_A = build_card(issue, 'A')
+    card_B = build_card(issue, 'B')
+    if card_A:
+        cards_A.append(card_A)
+    if card_B:
+        cards_B.append(card_B)
 
 cards_A.reverse()
 cards_B.reverse()
@@ -297,24 +288,25 @@ html_B = f'''<!DOCTYPE html>
             document.querySelectorAll('.edit-btn').forEach(btn => {{
                 btn.style.display = 'inline-block';
             }});
+            document.querySelectorAll('.delete-btn').forEach(btn => {{
+                btn.style.display = 'inline-block';
+            }});
             
+            // 编辑功能
             document.querySelectorAll('.edit-btn').forEach(btn => {{
                 const wrapper = btn.closest('.cert-wrapper');
                 const issueNumber = wrapper.dataset.issueNumber;
+                const titleEl = document.getElementById('title_' + issueNumber);
                 const nameEl = document.getElementById('name_' + issueNumber);
                 const genderEl = document.getElementById('gender_' + issueNumber);
                 const idEl = document.getElementById('id_' + issueNumber);
                 const dateEl = document.getElementById('date_' + issueNumber);
-                const statusEl = document.getElementById('status_' + issueNumber);
                 const saveBtn = document.getElementById('saveBtn_' + issueNumber);
-                const statusBadge = document.getElementById('statusBadge_' + issueNumber);
+                const deleteBtn = document.getElementById('deleteBtn_' + issueNumber);
                 const editStatus = document.getElementById('editStatus_' + issueNumber);
-                const qrArea = document.getElementById('qrArea_' + issueNumber);
-                
-                let qrDeleted = false;
                 
                 btn.addEventListener('click', function() {{
-                    [nameEl, genderEl, idEl, dateEl, statusEl].forEach(el => {{
+                    [titleEl, nameEl, genderEl, idEl, dateEl].forEach(el => {{
                         if (el) {{
                             el.contentEditable = true;
                             el.classList.add('editable-field');
@@ -328,30 +320,16 @@ html_B = f'''<!DOCTYPE html>
                             <option value="女" ${{currentGender === '女' ? 'selected' : ''}}>女</option>
                         </select>`;
                     }}
-                    // 添加"删除二维码"复选框
-                    const qrCheckbox = document.createElement('div');
-                    qrCheckbox.id = 'qrCheckbox_' + issueNumber;
-                    qrCheckbox.style.cssText = 'margin-top: 8px; font-size: 13px; color: #333;';
-                    qrCheckbox.innerHTML = `
-                        <label style="display: flex; align-items: center; gap: 6px;">
-                            <input type="checkbox" id="qrDel_${{issueNumber}}" ${{qrArea && qrArea.style.display === 'none' ? 'checked' : ''}}> 
-                            删除二维码
-                        </label>
-                    `;
-                    const container = genderEl ? genderEl.closest('.text-container') : null;
-                    if (container) {{
-                        const existing = document.getElementById('qrCheckbox_' + issueNumber);
-                        if (existing) existing.remove();
-                        container.appendChild(qrCheckbox);
-                    }}
                     
                     saveBtn.style.display = 'inline-block';
+                    deleteBtn.style.display = 'none';
                     btn.style.display = 'none';
                     editStatus.textContent = '点击保存修改';
                     editStatus.style.display = 'block';
                 }});
                 
                 saveBtn.addEventListener('click', function() {{
+                    const newTitle = titleEl ? titleEl.textContent.trim() : '广东省食品从业人员健康证明';
                     const newName = nameEl ? nameEl.textContent.trim() : '';
                     let newGender = '';
                     const genderSelect = genderEl ? genderEl.querySelector('.gender-select') : null;
@@ -362,12 +340,8 @@ html_B = f'''<!DOCTYPE html>
                     }}
                     const newId = idEl ? idEl.textContent.trim() : '';
                     const newDate = dateEl ? dateEl.textContent.trim() : '';
-                    const newStatus = statusEl ? statusEl.textContent.trim() : '未付款';
                     
-                    const qrCheckbox = document.getElementById('qrDel_' + issueNumber);
-                    const qrHidden = (qrCheckbox && qrCheckbox.checked) ? '是' : '否';
-                    
-                    const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}\\n支付状态：${{newStatus}}\\n隐藏二维码：${{qrHidden}}`;
+                    const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}`;
                     
                     let token = localStorage.getItem('github_token');
                     if (!token) {{
@@ -404,15 +378,7 @@ html_B = f'''<!DOCTYPE html>
                     .then(data => {{
                         editStatus.textContent = '✅ 保存成功！正在重新生成...';
                         editStatus.style.color = '#2f9e44';
-                        if (statusBadge) {{
-                            const isPaid = newStatus.includes('已付款');
-                            statusBadge.textContent = newStatus;
-                            statusBadge.style.background = isPaid ? '#2f9e44' : '#e53e3e';
-                        }}
-                        if (qrArea) {{
-                            qrArea.style.display = (qrHidden === '是') ? 'none' : 'block';
-                        }}
-                        [nameEl, idEl, dateEl, statusEl].forEach(el => {{
+                        [titleEl, nameEl, idEl, dateEl].forEach(el => {{
                             if (el) {{
                                 el.contentEditable = false;
                                 el.classList.remove('editable-field');
@@ -422,9 +388,8 @@ html_B = f'''<!DOCTYPE html>
                             const genderVal = genderSelect.value;
                             genderEl.innerHTML = genderVal;
                         }}
-                        const cb = document.getElementById('qrCheckbox_' + issueNumber);
-                        if (cb) cb.remove();
                         saveBtn.style.display = 'none';
+                        deleteBtn.style.display = 'inline-block';
                         btn.style.display = 'inline-block';
                         editStatus.textContent = '⏳ 等待 Actions 重新生成（约1-2分钟）...';
                         editStatus.style.color = '#b36b1e';
@@ -432,6 +397,64 @@ html_B = f'''<!DOCTYPE html>
                             editStatus.textContent = '🔄 刷新页面查看更新';
                             editStatus.style.color = '#2b6ef0';
                         }}, 3000);
+                    }})
+                    .catch(err => {{
+                        editStatus.textContent = '❌ ' + err.message;
+                        editStatus.style.color = '#e53e3e';
+                    }});
+                }});
+            }});
+            
+            // 删除卡片功能
+            document.querySelectorAll('.delete-btn').forEach(btn => {{
+                const wrapper = btn.closest('.cert-wrapper');
+                const issueNumber = wrapper.dataset.issueNumber;
+                const editStatus = document.getElementById('editStatus_' + issueNumber);
+                
+                btn.addEventListener('click', function() {{
+                    if (!confirm('确定要删除这张卡片吗？删除后不可恢复。')) return;
+                    
+                    let token = localStorage.getItem('github_token');
+                    if (!token) {{
+                        token = prompt('请输入您的 GitHub Token（删除需要）:');
+                        if (token) localStorage.setItem('github_token', token);
+                    }}
+                    if (!token) {{
+                        editStatus.textContent = '❌ 需要 Token 才能删除';
+                        editStatus.style.color = '#e53e3e';
+                        return;
+                    }}
+                    
+                    const body = `删除卡片：是`;
+                    const repo = 'merryAndrew/HealthCertificate';
+                    const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
+                    
+                    editStatus.textContent = '⏳ 删除中...';
+                    editStatus.style.color = '#e53e3e';
+                    
+                    fetch(url, {{
+                        method: 'PATCH',
+                        headers: {{
+                            'Authorization': `Bearer ${{token}}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json',
+                        }},
+                        body: JSON.stringify({{
+                            body: body
+                        }})
+                    }})
+                    .then(res => {{
+                        if (!res.ok) throw new Error('删除失败: ' + res.status);
+                        return res.json();
+                    }})
+                    .then(data => {{
+                        editStatus.textContent = '✅ 删除成功！正在重新生成...';
+                        editStatus.style.color = '#2f9e44';
+                        // 直接隐藏卡片
+                        wrapper.style.display = 'none';
+                        setTimeout(() => {{
+                            location.reload();
+                        }}, 2000);
                     }})
                     .catch(err => {{
                         editStatus.textContent = '❌ ' + err.message;
