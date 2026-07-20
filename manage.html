@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>健康证 · 数据管理</title>
     <style>
+        /* 样式与上一版完全一致，为节省篇幅此处省略，请复制之前的完整样式 */
+        /* 但我会在下面提供完整的代码，确保无遗漏 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #f2f4f8; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Roboto, Arial, sans-serif; padding: 20px; color: #1a2332; }
         .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); padding: 24px; }
@@ -275,6 +277,8 @@
     var allIssues = [], filteredIssues = [], selectedIds = new Set();
     var pollTimer = null;
     var MAX_POLLS = 24;
+    // 存储原始数据，用于检测变化
+    var originalData = null;
 
     // ---- Toast 居中 ----
     function showToastCenter(icon, msg, sub) {
@@ -459,6 +463,8 @@
         editSubmitBtn.disabled = false;
         editSubmitBtn.classList.remove('hidden');
         editFailActions.classList.remove('active');
+
+        // 填充表单
         f_title.value = p.raw.titleVal;
         f_name.value = p.name;
         f_gender.value = p.raw.gender;
@@ -474,10 +480,55 @@
         f_avatar.value = p.raw.avatar || '';
         if (p.raw.avatar) { editAvatarPreview.src = p.raw.avatar; editAvatarPreview.style.display = 'block'; }
         else { editAvatarPreview.style.display = 'none'; }
+
+        // ***** 保存原始数据用于变化检测 *****
+        originalData = {
+            title: f_title.value.trim(),
+            name: f_name.value.trim(),
+            gender: f_gender.value,
+            idNumber: f_idNumber.value.trim(),
+            hospital: f_hospital.value.trim(),
+            date: f_date.value,
+            duan1: f_duan1.value.trim(),
+            duan2: f_duan2.value.trim(),
+            afangwei: f_afangwei.value.trim(),
+            bhealth: f_bhealth.value.trim(),
+            aCard3: f_aCard3.value,
+            bCard3: f_bCard3.value,
+            avatar: f_avatar.value.trim()
+        };
+
         editProgress.classList.remove('active');
         editStatus.classList.remove('active');
         editStatus.className = 'modal-status';
         editModalOverlay.classList.add('active');
+    }
+
+    // ---- 检测数据是否变化 ----
+    function hasDataChanged() {
+        var current = {
+            title: f_title.value.trim(),
+            name: f_name.value.trim(),
+            gender: f_gender.value,
+            idNumber: f_idNumber.value.trim(),
+            hospital: f_hospital.value.trim(),
+            date: f_date.value,
+            duan1: f_duan1.value.trim(),
+            duan2: f_duan2.value.trim(),
+            afangwei: f_afangwei.value.trim(),
+            bhealth: f_bhealth.value.trim(),
+            aCard3: f_aCard3.value,
+            bCard3: f_bCard3.value,
+            avatar: f_avatar.value.trim()
+        };
+        if (!originalData) return true; // 如果没有原始数据，视为有变化
+        // 逐字段比较
+        for (var key in originalData) {
+            if (originalData[key] !== current[key]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ===== 核心：精准轮询单条卡片的 data-version =====
@@ -552,9 +603,18 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
-    // ---- 编辑提交 ----
+    // ---- 编辑提交（含变化检测） ----
     editForm.onsubmit = function(e) {
         e.preventDefault();
+
+        // ***** 先检测数据是否变化 *****
+        if (!hasDataChanged()) {
+            showToastCenter('ℹ️', '数据并无发生变化', '无需更新');
+            editModalOverlay.classList.remove('active');
+            originalData = null;
+            return;
+        }
+
         var repo = getRepo(), token = getToken();
         if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); return; }
         var name = f_name.value.trim(), idNumber = f_idNumber.value.trim();
@@ -604,6 +664,7 @@
                     editSubmitBtn.classList.remove('hidden');
                     editFailActions.classList.remove('active');
                     showToastCenter('✅', '更新成功！', '卡片已更新');
+                    originalData = null;
                     loadIssues();
                 },
                 function(errMsg) {
@@ -628,6 +689,7 @@
         editSubmitBtn.classList.remove('hidden');
         editFailActions.classList.remove('active');
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        originalData = null;
         loadIssues();
     };
 
@@ -640,6 +702,7 @@
         editSubmitBtn.textContent = '更新';
         editSubmitBtn.classList.remove('hidden');
         editFailActions.classList.remove('active');
+        originalData = null;
     }
     editModalCloseBtn.onclick = closeEditModal;
     editModalOverlay.onclick = function(e) { if (e.target === this) closeEditModal(); };
