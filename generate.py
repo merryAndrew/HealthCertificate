@@ -12,7 +12,6 @@ TOKEN = os.getenv('GITHUB_TOKEN')
 USER = REPO.split('/')[0] if REPO else 'merryAndrew'
 REPO_NAME = REPO.split('/')[1] if REPO and '/' in REPO else 'HealthCertificate'
 
-# 只获取未关闭的 Issue（open）
 url = f'https://api.github.com/repos/{REPO}/issues?state=open&per_page=100'
 headers = {'Authorization': f'token {TOKEN}', 'Accept': 'application/vnd.github.v3+json'}
 issues = requests.get(url, headers=headers).json()
@@ -68,8 +67,17 @@ def build_card(issue, style='A'):
     else:
         date_display = '未选择日期 (有效期一年)'
 
+    # 体检单位（可编辑）
+    hospital_match = re.search(r'体检单位[：:]\s*(.+)', all_text)
+    hospital = hospital_match.group(1).strip() if hospital_match else '广州东仁医院'
+
+    # 中间文字（可编辑）
     middle_text_match = re.search(r'中间文字[：:]\s*(.+)', all_text)
     middle_text = middle_text_match.group(1).strip() if middle_text_match else '广东省食品从业人员'
+
+    # 底部文字（可编辑）
+    bottom_text_match = re.search(r'底部文字[：:]\s*(.+)', all_text)
+    bottom_text = bottom_text_match.group(1).strip() if bottom_text_match else '此健康信息已上报平台'
 
     img_url = extract_first_image(all_text)
     if not img_url:
@@ -109,7 +117,7 @@ def build_card(issue, style='A'):
                         <div class="info-line">
                             <span style="font-weight: bold;">体检单位</span>
                             <span>∶</span>
-                            <span>广州东仁医院</span>
+                            <span>{hospital}</span>
                         </div>
                         <div class="info-line last-line">
                             <span style="font-weight: bold;">体检日期</span>
@@ -148,7 +156,12 @@ def build_card(issue, style='A'):
         '''
     else:
         return f'''
-        <div class="cert-wrapper" data-title="{title}" data-issue-number="{issue['number']}" style="position: relative; padding-bottom: 60px;">
+        <div class="cert-wrapper" data-title="{title}" data-issue-number="{issue['number']}" style="position: relative; padding-bottom: 70px;">
+            <!-- 复选框（管理员可见） -->
+            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
+                <input type="checkbox" class="card-select" data-issue="{issue['number']}" data-title="{title}" />
+            </div>
+
             <div class="cert-module top-card">
                 <div class="top-title" id="title_{issue['number']}">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -174,7 +187,7 @@ def build_card(issue, style='A'):
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content" id="hospital_{issue['number']}">{hospital}</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
@@ -196,9 +209,17 @@ def build_card(issue, style='A'):
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
+                    <div class="qrcode-title" id="bottomText_{issue['number']}">{bottom_text}</div>
                 </div>
             </div>
+
+            <!-- 按钮组 -->
+            <div class="button-group" id="buttonGroup_{issue['number']}" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
+                <button class="edit-btn" id="editBtn_{issue['number']}" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
+                <button class="save-btn" id="saveBtn_{issue['number']}" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
+                <button class="cancel-btn" id="cancelBtn_{issue['number']}" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+            </div>
+            <div class="edit-status" id="editStatus_{issue['number']}" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
         </div>
         '''
 
@@ -220,7 +241,7 @@ html_B = f'''<!DOCTYPE html>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }}
-        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; position: relative; padding-bottom: 60px; }}
+        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; position: relative; padding-bottom: 70px; }}
         .cert-module {{ background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }}
         .top-card {{ font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }}
         .top-title {{ text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }}
@@ -275,9 +296,9 @@ html_B = f'''<!DOCTYPE html>
             align-items: center;
             gap: 10px;
         }}
-        .admin-bar input {{
+        .admin-bar input[type="text"] {{
             flex: 1;
-            min-width: 150px;
+            min-width: 120px;
             padding: 8px 12px;
             border: 1px solid #dce0e6;
             border-radius: 8px;
@@ -300,35 +321,20 @@ html_B = f'''<!DOCTYPE html>
             opacity: 0.5;
             cursor: not-allowed;
         }}
-        .admin-bar .btn-primary {{
-            background: #2b6ef0;
-            color: #fff;
-            border: none;
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 13px;
-            cursor: pointer;
-        }}
-        .admin-bar .btn-success {{
-            background: #2f9e44;
-            color: #fff;
-            border: none;
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 13px;
-            cursor: pointer;
-        }}
-        .checkbox-container {{
+        .admin-bar .checkbox-container {{
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 13px;
-            color: #333;
         }}
-        .checkbox-container input[type="checkbox"] {{
+        .admin-bar .checkbox-container input[type="checkbox"] {{
             width: 16px;
             height: 16px;
             cursor: pointer;
+        }}
+        .admin-bar .badge {{
+            font-size: 12px;
+            color: #666;
         }}
         .card-checkbox {{
             position: absolute;
@@ -341,34 +347,18 @@ html_B = f'''<!DOCTYPE html>
             height: 18px;
             cursor: pointer;
         }}
-        .edit-btn, .save-btn, .delete-btn, .cancel-btn {{
+        .button-group button {{
             border: none;
             border-radius: 20px;
             padding: 6px 16px;
             font-size: 13px;
             cursor: pointer;
         }}
-        .edit-btn {{ background: #2b6ef0; color: #fff; }}
-        .save-btn {{ background: #2f9e44; color: #fff; }}
-        .delete-btn {{ background: #e53e3e; color: #fff; }}
-        .cancel-btn {{ background: #6c757d; color: #fff; }}
-        .button-group {{
-            position: absolute;
-            bottom: 10px;
-            left: 12px;
-            right: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 30;
-        }}
-        .button-group.hidden {{ display: none; }}
         .edit-status {{
             position: absolute;
             bottom: 50px;
             right: 12px;
             font-size: 12px;
-            color: #2b6ef0;
             z-index: 20;
             display: none;
         }}
@@ -378,7 +368,7 @@ html_B = f'''<!DOCTYPE html>
 </head>
 <body>
     <div id="app">
-        <!-- 管理员栏（超级管理员） -->
+        <!-- 管理员栏（仅管理员可见） -->
         <div id="adminBar" style="display: none;" class="admin-bar">
             <input type="text" id="searchInput" placeholder="🔍 搜索姓名..." />
             <div class="checkbox-container">
@@ -386,7 +376,7 @@ html_B = f'''<!DOCTYPE html>
                 <label for="selectAll">全选</label>
             </div>
             <button class="btn-danger" id="batchDeleteBtn">删除选中</button>
-            <span id="batchStatus" style="font-size: 12px; color: #666;"></span>
+            <span class="badge" id="batchStatus"></span>
         </div>
         
         <!-- 卡片列表 -->
@@ -403,8 +393,8 @@ html_B = f'''<!DOCTYPE html>
             const params = new URLSearchParams(window.location.search);
             const idParam = params.get('id');
             const editParam = params.get('edit');
-            const adminParam = params.get('admin');
             
+            const isAdmin = (editParam === '123456');
             const wrappers = document.querySelectorAll('.cert-wrapper');
             const notFound = document.getElementById('notFoundMessage');
             const adminBar = document.getElementById('adminBar');
@@ -413,86 +403,63 @@ html_B = f'''<!DOCTYPE html>
             const batchDeleteBtn = document.getElementById('batchDeleteBtn');
             const batchStatus = document.getElementById('batchStatus');
             
-            // ===== 判断角色 =====
-            const isSuperAdmin = (adminParam === '888888');
-            const isNormalAdmin = (editParam === '123456');
-            const hasAdmin = isSuperAdmin || isNormalAdmin;
-            
-            // ===== 超级管理员：显示所有卡片，显示管理栏 =====
-            if (isSuperAdmin) {{
+            // ===== 管理员模式：显示管理栏，列出所有卡片 =====
+            if (isAdmin) {{
                 adminBar.style.display = 'flex';
-                wrappers.forEach(w => {{
-                    w.style.display = 'block';
-                    // 添加复选框
-                    const cb = document.createElement('div');
-                    cb.className = 'card-checkbox';
-                    cb.innerHTML = `<input type="checkbox" class="card-select" data-issue="$${{w.dataset.issueNumber}}" data-title="$${{w.dataset.title}}" />`;
-                    w.prepend(cb);
-                    // 在超级管理员模式下，显示编辑按钮
-                    const editBtn = w.querySelector('.edit-btn');
-                    if (editBtn) editBtn.style.display = 'block';
-                }});
-                notFound.style.display = 'none';
-            }}
-            
-            // ===== 普通管理员：只显示匹配的卡片 =====
-            if (isNormalAdmin && idParam) {{
-                let decodedId = '';
-                try {{ decodedId = decodeURIComponent(idParam); }} catch(e) {{ decodedId = idParam; }}
-                let found = false;
-                wrappers.forEach(w => {{
-                    const title = w.dataset.title;
-                    if (title === decodedId) {{
-                        w.style.display = 'block';
-                        found = true;
-                        // 显示编辑按钮
-                        const editBtn = w.querySelector('.edit-btn');
-                        if (editBtn) editBtn.style.display = 'block';
-                    }} else {{
-                        w.style.display = 'none';
+                // 显示复选框
+                document.querySelectorAll('.card-checkbox').forEach(cb => cb.style.display = 'block');
+                // 显示所有卡片（如果带 id 则过滤）
+                if (idParam) {{
+                    let decodedId = '';
+                    try {{ decodedId = decodeURIComponent(idParam); }} catch(e) {{ decodedId = idParam; }}
+                    let found = false;
+                    wrappers.forEach(w => {{
+                        const title = w.dataset.title;
+                        if (title === decodedId) {{
+                            w.style.display = 'block';
+                            found = true;
+                        }} else {{
+                            w.style.display = 'none';
+                        }}
+                    }});
+                    if (!found) {{
+                        wrappers.forEach(w => w.style.display = 'none');
+                        notFound.style.display = 'block';
                     }}
-                }});
-                if (!found) {{
-                    wrappers.forEach(w => w.style.display = 'none');
-                    notFound.style.display = 'block';
+                }} else {{
+                    wrappers.forEach(w => w.style.display = 'block');
+                    notFound.style.display = 'none';
+                }}
+            }} else {{
+                // 非管理员模式
+                if (idParam) {{
+                    let decodedId = '';
+                    try {{ decodedId = decodeURIComponent(idParam); }} catch(e) {{ decodedId = idParam; }}
+                    let found = false;
+                    wrappers.forEach(w => {{
+                        const title = w.dataset.title;
+                        if (title === decodedId) {{
+                            w.style.display = 'block';
+                            found = true;
+                        }} else {{
+                            w.style.display = 'none';
+                        }}
+                    }});
+                    if (!found) {{
+                        wrappers.forEach(w => w.style.display = 'none');
+                        notFound.style.display = 'block';
+                    }}
+                }} else {{
+                    wrappers.forEach(w => w.style.display = 'block');
+                    notFound.style.display = 'none';
                 }}
             }}
             
-            // ===== 没有管理员：只按 id 过滤（普通用户） =====
-            if (!hasAdmin && idParam) {{
-                let decodedId = '';
-                try {{ decodedId = decodeURIComponent(idParam); }} catch(e) {{ decodedId = idParam; }}
-                let found = false;
-                wrappers.forEach(w => {{
-                    const title = w.dataset.title;
-                    if (title === decodedId) {{
-                        w.style.display = 'block';
-                        found = true;
-                    }} else {{
-                        w.style.display = 'none';
-                    }}
-                }});
-                if (!found) {{
-                    wrappers.forEach(w => w.style.display = 'none');
-                    notFound.style.display = 'block';
-                }}
-            }}
+            // ===== 管理员专属功能 =====
+            if (!isAdmin) return;
             
-            // ===== 如果没有任何管理员且没有 id，显示所有卡片 =====
-            if (!hasAdmin && !idParam) {{
-                wrappers.forEach(w => w.style.display = 'block');
-            }}
-            
-            // ===== 如果只有普通管理员但没有 id，显示所有卡片（但无编辑权限） =====
-            if (isNormalAdmin && !idParam) {{
-                wrappers.forEach(w => w.style.display = 'block');
-            }}
-            
-            // ===== 只有管理员才能看到编辑功能 =====
-            if (!hasAdmin) return;
-            
-            // ===== 超级管理员搜索 =====
-            if (isSuperAdmin && searchInput) {{
+            // 搜索过滤
+            if (searchInput) {{
                 searchInput.addEventListener('input', function() {{
                     const keyword = this.value.trim().toLowerCase();
                     wrappers.forEach(w => {{
@@ -502,8 +469,8 @@ html_B = f'''<!DOCTYPE html>
                 }});
             }}
             
-            // ===== 全选/取消全选 =====
-            if (isSuperAdmin && selectAll) {{
+            // 全选/取消全选
+            if (selectAll) {{
                 selectAll.addEventListener('change', function() {{
                     const checked = this.checked;
                     document.querySelectorAll('.card-select').forEach(cb => cb.checked = checked);
@@ -521,11 +488,11 @@ html_B = f'''<!DOCTYPE html>
             
             function updateBatchStatus() {{
                 const checked = document.querySelectorAll('.card-select:checked');
-                batchStatus.textContent = `已选 ${{checked.length}} 张`;
+                batchStatus.textContent = checked.length > 0 ? `已选 ${{checked.length}} 张` : '';
             }}
             
-            // ===== 批量删除 =====
-            if (isSuperAdmin && batchDeleteBtn) {{
+            // 批量删除
+            if (batchDeleteBtn) {{
                 batchDeleteBtn.addEventListener('click', function() {{
                     const checked = document.querySelectorAll('.card-select:checked');
                     if (checked.length === 0) {{
@@ -591,25 +558,51 @@ html_B = f'''<!DOCTYPE html>
                 const nameEl = document.getElementById('name_' + issueNumber);
                 const genderEl = document.getElementById('gender_' + issueNumber);
                 const idEl = document.getElementById('id_' + issueNumber);
+                const hospitalEl = document.getElementById('hospital_' + issueNumber);
                 const dateEl = document.getElementById('date_' + issueNumber);
                 const middleTextEl = document.getElementById('middleText_' + issueNumber);
-                const group = document.getElementById('buttonGroup_' + issueNumber);
+                const bottomTextEl = document.getElementById('bottomText_' + issueNumber);
                 const saveBtn = document.getElementById('saveBtn_' + issueNumber);
-                const deleteBtn = document.getElementById('deleteBtn_' + issueNumber);
                 const cancelBtn = document.getElementById('cancelBtn_' + issueNumber);
                 const editStatus = document.getElementById('editStatus_' + issueNumber);
                 
-                if (!group) return;
-                
+                // 进入编辑状态
                 btn.addEventListener('click', function() {{
-                    btn.style.display = 'none';
-                    group.classList.remove('hidden');
-                    [titleEl, nameEl, genderEl, idEl, dateEl, middleTextEl].forEach(el => {{
+                    // 切换编辑状态
+                    const isEditing = btn.textContent === '取消编辑';
+                    if (isEditing) {{
+                        // 退出编辑状态
+                        btn.textContent = '编辑';
+                        saveBtn.style.display = 'none';
+                        cancelBtn.style.display = 'none';
+                        [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {{
+                            if (el) {{
+                                el.contentEditable = false;
+                                el.classList.remove('editable-field');
+                            }}
+                        }});
+                        // 恢复性别下拉为文本
+                        if (genderEl) {{
+                            const select = genderEl.querySelector('.gender-select');
+                            if (select) {{
+                                genderEl.innerHTML = select.value;
+                            }}
+                        }}
+                        editStatus.style.display = 'none';
+                        return;
+                    }}
+                    
+                    // 进入编辑状态
+                    btn.textContent = '取消编辑';
+                    saveBtn.style.display = 'inline-block';
+                    cancelBtn.style.display = 'inline-block';
+                    [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {{
                         if (el) {{
                             el.contentEditable = true;
                             el.classList.add('editable-field');
                         }}
                     }});
+                    // 性别改为下拉
                     if (genderEl) {{
                         const currentGender = genderEl.textContent.trim();
                         genderEl.contentEditable = false;
@@ -619,15 +612,18 @@ html_B = f'''<!DOCTYPE html>
                         </select>`;
                     }}
                     editStatus.textContent = '编辑中...';
+                    editStatus.className = 'edit-status';
                     editStatus.style.display = 'block';
                 }});
                 
+                // 取消编辑
                 if (cancelBtn) {{
                     cancelBtn.addEventListener('click', function() {{
                         location.reload();
                     }});
                 }}
                 
+                // 保存编辑
                 if (saveBtn) {{
                     saveBtn.addEventListener('click', function() {{
                         const newTitle = titleEl ? titleEl.textContent.trim() : '广东省食品从业人员健康证明';
@@ -640,8 +636,10 @@ html_B = f'''<!DOCTYPE html>
                             newGender = genderEl ? genderEl.textContent.trim() : '男';
                         }}
                         const newId = idEl ? idEl.textContent.trim() : '';
+                        const newHospital = hospitalEl ? hospitalEl.textContent.trim() : '广州东仁医院';
                         const newDate = dateEl ? dateEl.textContent.trim() : '';
                         const newMiddle = middleTextEl ? middleTextEl.textContent.trim() : '广东省食品从业人员';
+                        const newBottom = bottomTextEl ? bottomTextEl.textContent.trim() : '此健康信息已上报平台';
                         
                         let token = localStorage.getItem('github_token');
                         if (!token) {{
@@ -656,7 +654,7 @@ html_B = f'''<!DOCTYPE html>
                         
                         const repo = 'merryAndrew/HealthCertificate';
                         const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
-                        const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}\\n中间文字：${{newMiddle}}`;
+                        const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检单位：${{newHospital}}\\n体检日期：${{newDate}}\\n中间文字：${{newMiddle}}\\n底部文字：${{newBottom}}`;
                         
                         editStatus.textContent = '⏳ 保存中...';
                         editStatus.className = 'edit-status';
@@ -677,7 +675,8 @@ html_B = f'''<!DOCTYPE html>
                         .then(() => {{
                             editStatus.textContent = '✅ 保存成功！正在重新生成...';
                             editStatus.className = 'edit-status success';
-                            [titleEl, nameEl, idEl, dateEl, middleTextEl].forEach(el => {{
+                            // 恢复只读
+                            [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {{
                                 if (el) {{
                                     el.contentEditable = false;
                                     el.classList.remove('editable-field');
@@ -686,53 +685,13 @@ html_B = f'''<!DOCTYPE html>
                             if (genderSelect) {{
                                 genderEl.innerHTML = genderSelect.value;
                             }}
-                            group.classList.add('hidden');
-                            btn.style.display = 'block';
+                            // 恢复按钮状态
+                            btn.textContent = '编辑';
+                            saveBtn.style.display = 'none';
+                            cancelBtn.style.display = 'none';
                             setTimeout(() => {{
                                 editStatus.textContent = '🔄 刷新查看更新';
                             }}, 3000);
-                        }})
-                        .catch(err => {{
-                            editStatus.textContent = '❌ ' + err.message;
-                            editStatus.className = 'edit-status error';
-                        }});
-                    }});
-                }}
-                
-                if (deleteBtn) {{
-                    deleteBtn.addEventListener('click', function() {{
-                        if (!confirm('确定删除此卡片？不可恢复。')) return;
-                        let token = localStorage.getItem('github_token');
-                        if (!token) {{
-                            token = prompt('请输入您的 GitHub Token（删除需要）:');
-                            if (token) localStorage.setItem('github_token', token);
-                        }}
-                        if (!token) {{
-                            editStatus.textContent = '❌ 需要 Token';
-                            editStatus.className = 'edit-status error';
-                            return;
-                        }}
-                        const repo = 'merryAndrew/HealthCertificate';
-                        const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
-                        editStatus.textContent = '⏳ 删除中...';
-                        editStatus.className = 'edit-status';
-                        fetch(url, {{
-                            method: 'PATCH',
-                            headers: {{
-                                'Authorization': `Bearer ${{token}}`,
-                                'Accept': 'application/vnd.github.v3+json',
-                                'Content-Type': 'application/json',
-                            }},
-                            body: JSON.stringify({{ state: 'closed' }})
-                        }})
-                        .then(res => {{
-                            if (!res.ok) throw new Error('删除失败');
-                            return res.json();
-                        }})
-                        .then(() => {{
-                            editStatus.textContent = '✅ 已删除，正在刷新...';
-                            editStatus.className = 'edit-status success';
-                            setTimeout(() => location.reload(), 1500);
                         }})
                         .catch(err => {{
                             editStatus.textContent = '❌ ' + err.message;
