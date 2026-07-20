@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据管理 · 健康证</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f5f7fa;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Roboto, Arial, sans-serif;
+      padding: 20px;
+      color: #1a2332;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .header h1 { font-size: 22px; }
+    .header .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+      background: #e1e4e8;
+      color: #24292f;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary { background: #1a2332; color: #fff; }
+    .btn-primary:hover { background: #2d3a4f; }
+    .btn-success { background: #1f883d; color: #fff; }
+    .btn-success:hover { background: #1a7a34; }
+    .btn-danger { background: #cf222e; color: #fff; }
+    .btn-danger:hover { background: #b11f2b; }
+    .btn-outline { background: transparent; border: 1px solid #d0d7de; }
+    .btn-outline:hover { background: #f6f8fa; }
+    .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+    /* 悬浮搜索条 */
+    .search-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #fff;
+      padding: 12px 0;
+      margin-bottom: 16px;
+      border-bottom: 2px solid #f0f2f5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .search-bar input {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: 0.2s;
+    }
+    .search-bar input:focus {
+      border-color: #1a2332;
+      box-shadow: 0 0 0 3px rgba(26,35,50,0.12);
+    }
+    .search-bar .badge-count {
+      font-size: 13px;
+      color: #6b7a8f;
+      white-space: nowrap;
+    }
+
+    /* 表格 */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 2px solid #e1e4e8;
+      background: #f6f8fa;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e1e4e8;
+      vertical-align: middle;
+    }
+    tr:hover td { background: #f9fafb; }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #e1e4e8;
+    }
+    .cell-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .cell-actions .btn { padding: 4px 12px; font-size: 12px; }
+    .no-data {
+      text-align: center;
+      padding: 40px 0;
+      color: #8b949e;
+    }
+    .checkbox-all { margin-right: 6px; }
+
+    /* 批量栏 */
+    .batch-bar {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 2px solid #f0f2f5;
+    }
+    .batch-bar .info { color: #57606a; font-size: 14px; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1f883d;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: 0.3s;
+      z-index: 999;
+      font-weight: 500;
+    }
+    .toast.error { background: #cf222e; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* 加载遮罩 */
+    .loading-overlay {
+      display: none;
+      text-align: center;
+      padding: 40px 0;
+    }
+    .loading-overlay.active { display: block; }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e8ecf2;
+      border-top: 4px solid #1a2332;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="container" id="app">
+  <div class="header">
+    <h1>📋 数据管理</h1>
+    <div class="actions">
+      <button class="btn btn-outline" @click="loadIssues">🔄 刷新</button>
+      <a href="index.html" class="btn btn-success">➕ 新增</a>
+    </div>
+  </div>
+
+  <!-- 搜索条 -->
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 搜索姓名..." @input="filterData">
+    <span class="badge-count" id="countDisplay">共 0 条</span>
+  </div>
+
+  <!-- 加载 -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div>加载中...</div>
+  </div>
+
+  <!-- 表格 -->
+  <div class="table-wrap" id="tableWrap" style="display:none;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px;">
+            <input type="checkbox" id="selectAll" @change="toggleAll">
+          </th>
+          <th style="width:50px;">头像</th>
+          <th>姓名</th>
+          <th>身份证号</th>
+          <th style="width:160px;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div id="noData" class="no-data" style="display:none;">暂无数据</div>
+  </div>
+
+  <!-- 批量栏 -->
+  <div class="batch-bar" id="batchBar" style="display:none;">
+    <span class="info">已选 <span id="selectedCount">0</span> 项</span>
+    <button class="btn btn-danger" id="batchDeleteBtn">🗑️ 批量删除</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ===== 配置 =====
+// 从 localStorage 读取与 index.html 相同的配置
+const REPO_KEY = 'github_issue_upload_repo';
+const TOKEN_KEY = 'github_issue_upload_token';
+
+function getRepo() { return localStorage.getItem(REPO_KEY) || ''; }
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+
+// ===== Vue 实例 =====
+const app = new Vue({
+  el: '#app',
+  data: {
+    issues: [],          // 原始 Issue 列表（仅 open 状态）
+    filtered: [],        // 过滤后的数据
+    selected: new Set(), // 选中 Issue 的 id 集合
+    loading: false
+  },
+  mounted() {
+    this.checkConfig();
+    this.loadIssues();
+  },
+  methods: {
+    checkConfig() {
+      if (!getRepo() || !getToken()) {
+        this.showToast('⚠️ 请先在「系统配置」中保存仓库路径和 Token', true);
+      }
+    },
+    async loadIssues() {
+      const repo = getRepo();
+      const token = getToken();
+      if (!repo || !token) {
+        this.showToast('请先配置仓库和 Token', true);
+        return;
+      }
+      this.loading = true;
+      document.getElementById('loadingOverlay').classList.add('active');
+      document.getElementById('tableWrap').style.display = 'none';
+      document.getElementById('batchBar').style.display = 'none';
+
+      try {
+        const url = `https://api.github.com/repos/${repo}/issues?state=open&per_page=100`;
+        const res = await fetch(url, {
+          headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        // 过滤掉 PR
+        this.issues = data.filter(issue => !issue.pull_request);
+        this.filtered = [...this.issues];
+        this.selected.clear();
+        this.renderTable();
+        this.showToast(`加载成功，共 ${this.issues.length} 条`, false);
+      } catch (err) {
+        console.error(err);
+        this.showToast('加载失败：' + err.message, true);
+      } finally {
+        this.loading = false;
+        document.getElementById('loadingOverlay').classList.remove('active');
+        document.getElementById('tableWrap').style.display = 'block';
+        document.getElementById('batchBar').style.display = 'flex';
+      }
+    },
+
+    // ---- 解析 Issue body 获取字段 ----
+    parseIssue(issue) {
+      const body = issue.body || '';
+      const get = (key) => {
+        const match = body.match(new RegExp(key + '[：:]\\s*(.+)'));
+        return match ? match[1].trim() : '';
+      };
+      const avatarMatch = body.match(/头像图片[：:]\s*(https?:\/\/[^\s]+)/);
+      return {
+        id: issue.id,
+        number: issue.number,
+        title: issue.title,
+        name: issue.title,
+        idCard: get('身份证'),
+        avatar: avatarMatch ? avatarMatch[1] : '',
+        // 保留完整 body 以便编辑时回填
+        rawBody: body,
+        // 保存其他字段用于编辑回填
+        fields: {
+          titleVal: get('标题'),
+          gender: get('性别'),
+          hospital: get('体检单位'),
+          date: get('体检日期'),
+          duan1: get('一段'),
+          duan2: get('二段'),
+          afangwei: get('A版防伪字段'),
+          bhealth: get('B版健康信息'),
+          aCard3: get('A版三卡显示') || '0',
+          bCard3: get('B版三卡显示') || '0',
+          avatar: avatarMatch ? avatarMatch[1] : ''
+        }
+      };
+    },
+
+    // ---- 渲染表格 ----
+    renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const noData = document.getElementById('noData');
+      const data = this.filtered;
+      document.getElementById('countDisplay').textContent = `共 ${data.length} 条`;
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '';
+        noData.style.display = 'block';
+        document.getElementById('batchBar').style.display = 'none';
+        this.updateSelectedCount();
+        return;
+      }
+      noData.style.display = 'none';
+      document.getElementById('batchBar').style.display = 'flex';
+
+      let html = '';
+      data.forEach(issue => {
+        const parsed = this.parseIssue(issue);
+        const checked = this.selected.has(issue.id) ? 'checked' : '';
+        html += `
+          <tr>
+            <td><input type="checkbox" class="row-checkbox" data-id="${issue.id}" ${checked}></td>
+            <td><img class="avatar" src="${parsed.avatar || ''}" alt="头像" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22 fill=%22%23e1e4e8%22%3E%3Crect width=%2240%22 height=%2240%22/%3E%3C/svg%3E'"></td>
+            <td><strong>${this.escapeHtml(parsed.name)}</strong></td>
+            <td>${this.escapeHtml(parsed.idCard)}</td>
+            <td class="cell-actions">
+              <button class="btn btn-primary" data-action="edit" data-id="${issue.id}">编辑</button>
+              <button class="btn btn-danger" data-action="delete" data-id="${issue.id}">删除</button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+
+      // 绑定事件
+      this.bindEvents();
+      this.updateSelectedCount();
+      this.updateSelectAllState();
+    },
+
+    bindEvents() {
+      // 行复选框
+      document.querySelectorAll('.row-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          const id = parseInt(e.target.dataset.id);
+          if (e.target.checked) this.selected.add(id);
+          else this.selected.delete(id);
+          this.updateSelectedCount();
+          this.updateSelectAllState();
+        });
+      });
+
+      // 全选
+      document.getElementById('selectAll').addEventListener('change', (e) => {
+        this.toggleAll(e);
+      });
+
+      // 操作按钮（事件代理）
+      document.getElementById('tableBody').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const id = parseInt(btn.dataset.id);
+        if (action === 'edit') this.editIssue(id);
+        else if (action === 'delete') this.deleteIssue(id);
+      });
+
+      // 批量删除
+      document.getElementById('batchDeleteBtn').addEventListener('click', () => {
+        this.batchDelete();
+      });
+
+      // 搜索
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        this.filterData(e);
+      });
+    },
+
+    // ---- 工具 ----
+    escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    },
+
+    updateSelectedCount() {
+      document.getElementById('selectedCount').textContent = this.selected.size;
+    },
+
+    updateSelectAllState() {
+      const total = this.filtered.length;
+      const checked = this.filtered.filter(issue => this.selected.has(issue.id)).length;
+      const selectAll = document.getElementById('selectAll');
+      if (selectAll) {
+        selectAll.checked = total > 0 && checked === total;
+        selectAll.indeterminate = checked > 0 && checked < total;
+      }
+    },
+
+    // ---- 搜索过滤 ----
+    filterData(e) {
+      const keyword = e.target.value.trim().toLowerCase();
+      if (!keyword) {
+        this.filtered = [...this.issues];
+      } else {
+        this.filtered = this.issues.filter(issue =>
+          issue.title.toLowerCase().includes(keyword)
+        );
+      }
+      this.selected.clear();
+      this.renderTable();
+    },
+
+    // ---- 全选 ----
+    toggleAll(e) {
+      const checked = e.target.checked;
+      if (checked) {
+        this.filtered.forEach(issue => this.selected.add(issue.id));
+      } else {
+        this.filtered.forEach(issue => this.selected.delete(issue.id));
+      }
+      this.renderTable();
+    },
+
+    // ---- 编辑：跳转到 index.html 并携带数据 ----
+    editIssue(id) {
+      const issue = this.issues.find(i => i.id === id);
+      if (!issue) return;
+      const parsed = this.parseIssue(issue);
+      // 构造 URL 参数，包含所有字段
+      const data = {
+        title: parsed.name,
+        name: parsed.name,
+        gender: parsed.fields.gender,
+        idNumber: parsed.idCard,
+        hospital: parsed.fields.hospital,
+        date: parsed.fields.date,
+        duan1: parsed.fields.duan1,
+        duan2: parsed.fields.duan2,
+        afangwei: parsed.fields.afangwei,
+        bhealth: parsed.fields.bhealth,
+        aCard3: parsed.fields.aCard3,
+        bCard3: parsed.fields.bCard3,
+        avatar: parsed.fields.avatar,
+        issueNumber: issue.number
+      };
+      const dataStr = encodeURIComponent(JSON.stringify(data));
+      window.location.href = `index.html?edit=${issue.number}&data=${dataStr}`;
+    },
+
+    // ---- 删除单条（关闭 Issue） ----
+    async deleteIssue(id) {
+      const issue = this.issues.find(i => i.id === id);
+      if (!issue) return;
+      if (!confirm(`确定要删除「${issue.title}」吗？此操作将关闭 Issue。`)) return;
+      try {
+        await this.closeIssue(issue.number);
+        this.showToast('已删除', false);
+        await this.loadIssues();
+      } catch (err) {
+        this.showToast('删除失败：' + err.message, true);
+      }
+    },
+
+    // ---- 批量删除 ----
+    async batchDelete() {
+      if (this.selected.size === 0) return alert('请先选择要删除的数据');
+      if (!confirm(`确定要删除选中的 ${this.selected.size} 条数据吗？此操作不可撤销！`)) return;
+      const ids = Array.from(this.selected);
+      const toDelete = this.issues.filter(i => ids.includes(i.id));
+      try {
+        for (const issue of toDelete) {
+          await this.closeIssue(issue.number);
+        }
+        this.showToast(`已删除 ${toDelete.length} 条`, false);
+        await this.loadIssues();
+      } catch (err) {
+        this.showToast('批量删除失败：' + err.message, true);
+      }
+    },
+
+    // ---- 调用 API 关闭 Issue ----
+    async closeIssue(number) {
+      const repo = getRepo();
+      const token = getToken();
+      const url = `https://api.github.com/repos/${repo}/issues/${number}`;
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ state: 'closed' })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    },
+
+    // ---- Toast ----
+    showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = 'toast' + (isError ? ' error' : '');
+      toast.classList.add('show');
+      clearTimeout(this._toastTimer);
+      this._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+  }
+});
+</script>
+</body>
+</html>
