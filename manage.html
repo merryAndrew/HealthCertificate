@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>健康证 · 数据管理（内置编辑）</title>
+    <title>健康证 · 数据管理</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -56,7 +56,7 @@
         td { padding: 12px 10px; border-bottom: 1px solid #e1e4e8; vertical-align: middle; }
         tr:hover td { background: #f9fafb; }
 
-        /* ===== 头像：小长方形 + 圆角 7px ===== */
+        /* 头像小长方形 + 圆角7px */
         .avatar {
             width: 50px;
             height: 66px;
@@ -65,29 +65,72 @@
             background: #e1e4e8;
             display: block;
         }
-        /* ===== 姓名列不换行 ===== */
-        .name-cell {
-            white-space: nowrap;
-            min-width: 80px;
-        }
+        .name-cell { white-space: nowrap; min-width: 80px; }
 
         .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
-
         .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
 
-        /* Toast */
-        .toast { position: fixed; top: 20px; right: 20px; background: #1f883d; color: #fff; padding: 12px 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-20px); transition: 0.3s; z-index: 999; font-weight: 500; }
+        /* Toast 提示 */
+        .toast {
+            position: fixed; top: 20px; right: 20px;
+            background: #1f883d; color: #fff;
+            padding: 12px 24px; border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0; transform: translateY(-20px);
+            transition: 0.3s; z-index: 999; font-weight: 500;
+        }
         .toast.error { background: #cf222e; }
         .toast.show { opacity: 1; transform: translateY(0); }
 
-        /* ===== Modal 居中 ===== */
+        /* 进度条（与 upload.html 一致） */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #e8ecf2;
+            border-radius: 2px;
+            margin-top: 12px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-container.active { display: block; }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #2b6ef0;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        .progress-bar.animate {
+            animation: progressAnim 1.8s ease-in-out infinite;
+        }
+        @keyframes progressAnim {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        /* 加载 spinner（居中） */
+        .loading-spinner {
+            text-align: center;
+            padding: 40px 0;
+        }
+        .loading-spinner .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e8ecf2;
+            border-top: 4px solid #1a2332;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+
+        /* 模态框（居中） */
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0,0,0,0.5);
             z-index: 1000;
             justify-content: center;
@@ -133,12 +176,28 @@
         .modal-box .avatar-preview img { width: 50px; height: 66px; border-radius: 7px; object-fit: cover; border: 2px solid #e1e4e8; display: none; }
         .modal-box .avatar-preview input { flex: 1; min-width: 140px; }
 
-        .modal-box .btn-submit-modal { width: 100%; padding: 14px; font-size: 17px; font-weight: 600; background: #1a2332; color: #fff; border: none; border-radius: 40px; cursor: pointer; margin-top: 10px; }
+        .modal-box .btn-submit-modal {
+            width: 100%; padding: 14px; font-size: 17px; font-weight: 600;
+            background: #1a2332; color: #fff; border: none; border-radius: 40px;
+            cursor: pointer; margin-top: 10px;
+        }
         .modal-box .btn-submit-modal:disabled { opacity: 0.5; }
-
-        .loading-spinner { text-align: center; padding: 20px; }
-        .spinner { width: 36px; height: 36px; border: 3px solid #e8ecf2; border-top: 3px solid #1a2332; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+        .modal-box .modal-progress {
+            margin-top: 12px;
+            height: 4px;
+            background: #e8ecf2;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+        .modal-box .modal-progress.active { display: block; }
+        .modal-box .modal-progress .bar {
+            height: 100%;
+            width: 0%;
+            background: #2b6ef0;
+            border-radius: 2px;
+            animation: progressAnim 1.8s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
@@ -148,7 +207,6 @@
         <h1>📋 数据管理</h1>
         <div class="actions">
             <button class="btn btn-outline" id="refreshBtn">🔄 刷新</button>
-            <!-- ===== 新增改成返回 ===== -->
             <a href="upload.html" class="btn btn-success">🔙 返回</a>
         </div>
     </div>
@@ -158,7 +216,16 @@
         <span class="badge" id="countDisplay">共 0 条</span>
     </div>
 
-    <div id="loadingArea" class="loading-spinner" style="display:none;"><div class="spinner"></div><div>加载中...</div></div>
+    <!-- 全局进度条 -->
+    <div class="progress-container" id="globalProgress">
+        <div class="progress-bar" id="globalProgressBar"></div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div id="loadingArea" class="loading-spinner" style="display:none;">
+        <div class="spinner"></div>
+        <div style="margin-top:12px; color:#6b7a8f;">加载中...</div>
+    </div>
 
     <div class="table-wrap" id="tableWrap">
         <table>
@@ -174,7 +241,7 @@
     </div>
 </div>
 
-<!-- ========== 模态框 ========== -->
+<!-- ========== 编辑模态框 ========== -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal-box">
         <button class="close-btn" id="modalCloseBtn">&times;</button>
@@ -216,6 +283,11 @@
                 </div>
             </div>
 
+            <!-- 模态框内部进度条 -->
+            <div class="modal-progress" id="modalProgress">
+                <div class="bar"></div>
+            </div>
+
             <button type="submit" class="btn-submit-modal" id="modalSubmitBtn">更新</button>
         </form>
     </div>
@@ -233,7 +305,7 @@
     function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
     function getImgbbKey() { return localStorage.getItem(IMGBB_KEY) || ''; }
 
-    // DOM
+    // DOM 元素
     const tbody = document.getElementById('tableBody');
     const noData = document.getElementById('noData');
     const searchInput = document.getElementById('searchInput');
@@ -242,18 +314,18 @@
     const selectedCount = document.getElementById('selectedCount');
     const batchDeleteBtn = document.getElementById('batchDeleteBtn');
     const refreshBtn = document.getElementById('refreshBtn');
-    const addBtn = document.getElementById('addBtn');
     const loadingArea = document.getElementById('loadingArea');
-
-    // Modal
+    const globalProgress = document.getElementById('globalProgress');
+    const globalProgressBar = document.getElementById('globalProgressBar');
     const modalOverlay = document.getElementById('modalOverlay');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
     const modalTitle = document.getElementById('modalTitle');
     const modalForm = document.getElementById('modalForm');
     const editIssueNumber = document.getElementById('editIssueNumber');
     const modalSubmitBtn = document.getElementById('modalSubmitBtn');
+    const modalProgress = document.getElementById('modalProgress');
 
-    // 表单字段
+    // 表单字段...
     const f_title = document.getElementById('f_title');
     const f_name = document.getElementById('f_name');
     const f_gender = document.getElementById('f_gender');
@@ -267,7 +339,6 @@
     const f_aCard3 = document.getElementById('f_aCard3');
     const f_bCard3 = document.getElementById('f_bCard3');
     const f_avatar = document.getElementById('f_avatar');
-
     const modalFileBtn = document.getElementById('modalFileBtn');
     const modalAvatarFile = document.getElementById('modalAvatarFile');
     const modalFileName = document.getElementById('modalFileName');
@@ -275,7 +346,7 @@
     const modalUploadStatus = document.getElementById('modalUploadStatus');
     const modalAvatarPreview = document.getElementById('modalAvatarPreview');
 
-    // State
+    // 状态
     let allIssues = [];
     let filteredIssues = [];
     let selectedIds = new Set();
@@ -288,6 +359,25 @@
         toast.classList.add('show');
         clearTimeout(window._toastTimer);
         window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ---- 进度条控制 ----
+    function showGlobalProgress() {
+        globalProgress.classList.add('active');
+        globalProgressBar.classList.remove('animate');
+        void globalProgressBar.offsetWidth;
+        globalProgressBar.classList.add('animate');
+    }
+    function hideGlobalProgress() {
+        globalProgress.classList.remove('active');
+        globalProgressBar.classList.remove('animate');
+        globalProgressBar.style.width = '0%';
+    }
+    function showModalProgress() {
+        modalProgress.classList.add('active');
+    }
+    function hideModalProgress() {
+        modalProgress.classList.remove('active');
     }
 
     // ---- Parse Issue ----
@@ -324,7 +414,6 @@
     function render() {
         const data = filteredIssues;
         countDisplay.textContent = `共 ${data.length} 条`;
-
         if (!data || data.length === 0) {
             tbody.innerHTML = '';
             noData.style.display = 'block';
@@ -364,7 +453,7 @@
         return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    // ---- Events binding ----
+    // ---- 事件绑定 ----
     function bindEvents() {
         document.querySelectorAll('.row-cb').forEach(cb => {
             cb.onchange = function() {
@@ -375,7 +464,6 @@
                 updateSelectAllState();
             };
         });
-
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.onclick = function() { openEditModal(parseInt(this.dataset.id)); };
         });
@@ -395,7 +483,7 @@
         selectAll.indeterminate = checked > 0 && checked < total;
     }
 
-    // ---- Load Issues ----
+    // ---- 加载 Issues ----
     async function loadIssues() {
         const repo = getRepo();
         const token = getToken();
@@ -423,7 +511,7 @@
         }
     }
 
-    // ---- Filter ----
+    // ---- 搜索过滤 ----
     searchInput.oninput = function() {
         const keyword = this.value.trim().toLowerCase();
         if (!keyword) filteredIssues = [...allIssues];
@@ -432,7 +520,7 @@
         render();
     };
 
-    // ---- Select All ----
+    // ---- 全选 ----
     selectAll.onchange = function() {
         if (this.checked) {
             filteredIssues.forEach(i => selectedIds.add(i.id));
@@ -442,7 +530,7 @@
         render();
     };
 
-    // ---- Edit Modal ----
+    // ---- 打开编辑模态框 ----
     function openEditModal(id) {
         const issue = allIssues.find(i => i.id === id);
         if (!issue) return;
@@ -450,7 +538,6 @@
         editIssueNumber.value = issue.number;
         modalTitle.textContent = '编辑数据';
         modalSubmitBtn.textContent = '更新 Issue';
-
         f_title.value = p.raw.titleVal;
         f_name.value = p.name;
         f_gender.value = p.raw.gender;
@@ -471,31 +558,11 @@
             modalAvatarPreview.style.display = 'none';
         }
         modalOverlay.classList.add('active');
+        // 隐藏模态框内的进度条
+        hideModalProgress();
     }
 
-    function clearForm() {
-        f_title.value = '广东省食品从业人员健康证明';
-        f_name.value = '';
-        f_gender.value = '男';
-        f_idNumber.value = '';
-        f_hospital.value = '广州东仁医院';
-        f_date.value = '';
-        f_duan1.value = '广东省食品从业人员';
-        f_duan2.value = '健康证明';
-        f_afangwei.value = '防伪标识二维码';
-        f_bhealth.value = '此健康信息已上报平台';
-        f_aCard3.value = '0';
-        f_bCard3.value = '0';
-        f_avatar.value = '';
-        modalAvatarPreview.style.display = 'none';
-        modalAvatarPreview.src = '';
-        modalAvatarFile.value = '';
-        modalFileName.textContent = '未选择';
-        modalUploadStatus.textContent = '';
-        document.getElementById('editIssueNumber').value = '';
-    }
-
-    // ---- Modal Submit ----
+    // ---- 模态框提交 ----
     modalForm.onsubmit = async function(e) {
         e.preventDefault();
         const repo = getRepo();
@@ -507,31 +574,33 @@
         if (!name || !idNumber) { showToast('姓名和身份证号不能为空', true); return; }
 
         const issueNumber = editIssueNumber.value;
+        if (!issueNumber) { showToast('错误：未找到 Issue 编号', true); return; }
+
         const title = name;
         const body = buildBody();
 
+        // 禁用按钮，显示进度
         modalSubmitBtn.disabled = true;
         modalSubmitBtn.textContent = '更新中...';
+        showModalProgress();
+        showGlobalProgress();
 
         try {
-            if (issueNumber) {
-                const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}`;
-                const res = await fetch(url, {
-                    method: 'PATCH',
-                    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, body })
-                });
-                if (!res.ok) throw new Error(`更新失败 (${res.status})`);
-                showToast('更新成功！', false);
-            } else {
-                showToast('⚠️ 未找到 Issue 编号', true);
-                return;
-            }
+            const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}`;
+            const res = await fetch(url, {
+                method: 'PATCH',
+                headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, body })
+            });
+            if (!res.ok) throw new Error(`更新失败 (${res.status})`);
+            showToast('✅ 更新成功！', false);
             modalOverlay.classList.remove('active');
-            await loadIssues();
+            await loadIssues(); // 重新加载列表
         } catch (err) {
-            showToast('操作失败：' + err.message, true);
+            showToast('❌ 操作失败：' + err.message, true);
         } finally {
+            hideModalProgress();
+            hideGlobalProgress();
             modalSubmitBtn.disabled = false;
             modalSubmitBtn.textContent = '更新 Issue';
         }
@@ -555,13 +624,14 @@
         return b;
     }
 
-    // ---- Delete ----
+    // ---- 删除单条 ----
     async function deleteIssue(id) {
         const issue = allIssues.find(i => i.id === id);
         if (!issue) return;
         if (!confirm(`确定要删除「${issue.title}」吗？`)) return;
         const repo = getRepo();
         const token = getToken();
+        showGlobalProgress();
         try {
             const url = `https://api.github.com/repos/${repo}/issues/${issue.number}`;
             const res = await fetch(url, {
@@ -570,20 +640,23 @@
                 body: JSON.stringify({ state: 'closed' })
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            showToast('已删除', false);
+            showToast('✅ 已删除', false);
             await loadIssues();
         } catch (err) {
-            showToast('删除失败：' + err.message, true);
+            showToast('❌ 删除失败：' + err.message, true);
+        } finally {
+            hideGlobalProgress();
         }
     }
 
-    // ---- Batch Delete ----
+    // ---- 批量删除 ----
     batchDeleteBtn.onclick = async function() {
         if (selectedIds.size === 0) return alert('请先选择要删除的数据');
         if (!confirm(`确定要删除选中的 ${selectedIds.size} 条数据吗？`)) return;
         const repo = getRepo();
         const token = getToken();
         const toDelete = allIssues.filter(i => selectedIds.has(i.id));
+        showGlobalProgress();
         try {
             for (const issue of toDelete) {
                 const url = `https://api.github.com/repos/${repo}/issues/${issue.number}`;
@@ -593,14 +666,16 @@
                     body: JSON.stringify({ state: 'closed' })
                 });
             }
-            showToast(`已删除 ${toDelete.length} 条`, false);
+            showToast(`✅ 已删除 ${toDelete.length} 条`, false);
             await loadIssues();
         } catch (err) {
-            showToast('批量删除失败：' + err.message, true);
+            showToast('❌ 批量删除失败：' + err.message, true);
+        } finally {
+            hideGlobalProgress();
         }
     };
 
-    // ---- Modal Avatar Upload (Imgbb) ----
+    // ---- 模态框头像上传 ----
     modalFileBtn.onclick = () => modalAvatarFile.click();
     modalAvatarFile.onchange = function() {
         if (this.files && this.files.length > 0) modalFileName.textContent = this.files[0].name;
@@ -646,17 +721,18 @@
         }
     };
 
-    // ---- Modal Close ----
+    // ---- 关闭模态框 ----
     function closeModal() {
         modalOverlay.classList.remove('active');
+        hideModalProgress();
     }
     modalCloseBtn.onclick = closeModal;
     modalOverlay.onclick = function(e) { if (e.target === this) closeModal(); };
 
-    // ---- Refresh ----
+    // ---- 刷新 ----
     refreshBtn.onclick = loadIssues;
 
-    // ---- Init ----
+    // ---- 初始化 ----
     if (!getRepo() || !getToken()) {
         showToast('⚠️ 请先在「系统配置」中保存仓库路径和 Token', true);
     }
@@ -665,7 +741,6 @@
     // 给日期框默认今天
     const today = new Date().toISOString().split('T')[0];
     if (f_date) f_date.value = today;
-
 })();
 </script>
 </body>
