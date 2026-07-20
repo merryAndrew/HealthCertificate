@@ -367,71 +367,10 @@
             </div>
         </div>
         
-        <div class="cert-wrapper" data-title="胡丽萍" data-body="姓名：胡丽萍
-性别：女
-身份证：555555555
-体检日期：2026年7月19日 (有效期一年)" data-issue-number="16" style="position: relative;">
-            <!-- 编辑按钮 -->
-            <button id="editBtn_16" class="edit-btn" style="display: none; position: absolute; bottom: 12px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
-            <button id="saveBtn_16" class="save-btn" style="display: none; position: absolute; bottom: 12px; right: 100px; background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">保存</button>
-            <button id="deleteBtn_16" class="delete-btn" style="display: none; position: absolute; bottom: 12px; right: 190px; background: #e53e3e; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">删除</button>
-            <div id="editStatus_16" style="display: none; position: absolute; bottom: 52px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20;"></div>
-            
-            <div class="cert-module top-card">
-                <div class="top-title" id="title_16">广东省食品从业人员健康证明</div>
-                <div class="top-content">
-                    <div class="text-container">
-                        <div class="info-line">
-                            <span class="label">姓 名</span>
-                            <span class="colon">∶</span>
-                            <span class="content" id="name_16">胡丽萍</span>
-                        </div>
-                        <div class="info-line">
-                            <span class="label">性 别</span>
-                            <span class="colon">∶</span>
-                            <span class="content" id="gender_16">女</span>
-                        </div>
-                        <div class="id-group">
-                            <div class="info-line">
-                                <span class="label">身份证号码</span>
-                                <span class="colon">∶</span>
-                                <span class="content" id="id_16">555555555</span>
-                            </div>
-                            <div class="info-line">(或其它有效证明)</div>
-                        </div>
-                        <div class="info-line">
-                            <span class="label">体检单位</span>
-                            <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
-                        </div>
-                        <div class="info-line last-line">
-                            <span class="label">体检日期</span>
-                            <span class="colon">∶</span>
-                            <span class="content" id="date_16">2026年7月19日 (有效期一年)</span>
-                        </div>
-                    </div>
-                    <div class="photo">
-                        <img src="https://via.placeholder.com/70x90?text=No+Photo" alt="持证人照片">
-                    </div>
-                </div>
-            </div>
-            <div class="cert-module middle-card">
-                <div class="middle-line">广东省食品从业人员</div>
-                <div class="middle-line">健康证明</div>
-            </div>
-            <div class="bottom-card">
-                <div class="qrcode-area">
-                    <div class="qrcode-img">
-                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADjklEQVR4nO2cQY6rSBBEXw5IXsIN+ij4BnOk1j/S3MAcxQdoCZZfAsUsqgoKd/9Nazy2WxELhJt+AqRUVmRW2iG+p/Gvb4Jg0qRJkyZNmjT5fGRktUT0EGfWYOzXANaI6NeAufzX+cFPa/IpyUGSNEE6XOaT4n1qFOe5RRcaAY0kSUfyEU9r8inJecsvc0s6G3tgfFuI92kNACKi/e/uafJnknEG9Ovtd0jXCGkCxjgpzne7p8mfRnYL8X49CTqJsQdJv+Ou9zT5yiTJ4mQ/1Ai6hRQ+dEu2QtvV6p8vr/WeJu9OjhER0QPD9SSGa5vO4n2C4pHWVJY9/mlNPhWZ8tCulH2khZR4Ll05u5HzkMmifXlimCAd6OpSn0ELupAveC0zeVTOKt2CLskFSQxTkw45GQE5zLTgPGTyqNI2bLSnoPQRIEUT+4K2rWqOIZNFe+s5xwaNdOlUDunC7pFwHjJ5o9pOUwwQgC5blb/5oX1VcwyZ3JQDaCrp5gKkJtFQ1WVkP5TMtmPIZK1S0atY54mqtq9LfS2wbbw6hkxuqmt75cZ0VccDud4flHOT1zKTR+21fdbRAFVNRai3PhxDJrPSKEdAi/IZKNX23QTj3x9l2qObCLqP0OOe1uQzkp/7Q3BoVuvoqe2HTH5NJsM8vqns2xel+dgzoAtrMJRptNd8T5P3ILe6LBdd2ewc5l4rP+Q+tcnP2kMlVV75b3sdv2+kLWXu2jFkslap7UseynY6t6hTwTZMpUVtP2Tys0ptv8WLlq3RqNKn1kLVu3YMmaxVCvc5EPNJMUYjxre8vAUdwNzD8E+Lxr555NOafEay9tTDTStx4rB9Ju+XmfxKKQ+JuUXMPYJmCVhDpK5jszCeWxj7j1bMbSn9X+s9Td6PPOxmHEbN8vVOW/Nxm0tzHjJZ69CnbrTvkt3uuW5nXstMHlTWsnRYiLyWQfbZrK2YgeECQbf95tVrvafJe5P7734Aa+wmuvwMSCOY2y/I79/T5A8jU/952lrU80nAGukri0ndkr/LeH7005p8KrL0qSfKgNlEcc3dtlG/W2ywpzZ5VHvzWeObiNRUvLbLp6vnbJ5e7T1N/o/kcM3fqNevfo209TH2a5Qx2OWP5PfvafKlydvf/Uh+KH0zkeNMflnpXNubPKqa/ai7iGWTdR+vPk40OoZMFlX9ocNZo/2T6qEQ94dMmjRp0qRJkz+M/BcWNX9k1FJHAQAAAABJRU5ErkJggg==" alt="防伪二维码">
-                    </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
-                </div>
-            </div>
-        </div>
-        
         <div class="cert-wrapper" data-title="罗一顺" data-body="姓名：罗一顺
 性别：男
 身份证：没母哪来的身份证？
+大头照:https://i.ibb.co/FLNN9hSB/file-0000000077288208854f7d3a6680d734.png
 体检日期：2026年7月16日 (有效期一年)" data-issue-number="17" style="position: relative;">
             <!-- 编辑按钮 -->
             <button id="editBtn_17" class="edit-btn" style="display: none; position: absolute; bottom: 12px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
@@ -473,7 +412,7 @@
                         </div>
                     </div>
                     <div class="photo">
-                        <img src="https://via.placeholder.com/70x90?text=No+Photo" alt="持证人照片">
+                        <img src="https://i.ibb.co/FLNN9hSB/file-0000000077288208854f7d3a6680d734.png" alt="持证人照片">
                     </div>
                 </div>
             </div>
@@ -485,71 +424,6 @@
                 <div class="qrcode-area">
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADgUlEQVR4nO2cQY6jQAxFvwekLOEGOQrcrNU3g6NwgJEqy5YK/VmUqwro9CxaaYWOvhcRgjxVRbLsb7uIEd+z+c83QUCkSJEiRYoUKfJ8pLm1fjXezDD3qwG7K3/65N2KPCU5kCQDQDICQEMMoaGN6XlDAA1Jknvy+2uKfDHyVuLL7UIAq2HuAb5fSXsLqwEAzKx93JoiX5O0EQDfrxEYFjMMYTXMdikR6QfWFPm7yfbTnS7ChuVCoPO0RcDj0GPWFPmaZEdySpclb/WrYe4b2ogmPc1q6TFrinwpcjYzsx7IegjAsFxob0sL4NbCRqypLHvUmiJfhAT3lu5NAMjQkFMX/epg0+/6nSJ/mrQRQOoKDYwAOqbizN6WFjZ2H1ZDlY1P3q3Ic5E5DoUidjqSDN4fIkP+4kASAyMUh0TubdM2HALAqcs9Rm80+j1PaCWryYdEZss+VJvQDTl1zB8AcvSJyPFKPiTySJKMqQlNhqyMgNVs7HIxP1sLzL30kMijHfRQEkADI5Ie8jQG10NJLSkOidyaZ7BD3gpe2yc9xJzLUHKefEhkseRDHmQiOCUviZtCDEPAJjalIb98SKRbmZetLXFrYQDSB+f+b0ugoaEjMBvAuW+euVuRZyQ3tX3tD3mkyVMyty6HKuUykTuresh7QYCLaNfPe00tPSTyPkkuLTBfI9LZjzE/TudjRwCcsPpxosesKfJVyBKHchuoprFtkiM3c1jFIZE7qw5Sa7BdHR/BKUshP3ctHxK5tRqHOO2mZECt8oMLJUgPifyKHEJDoPvYKJ7kPrO1aeaaph7uXE/erchTkbuZa57Me9u6K4c9AkowUhwSeTTvUwf4mGPqXAClgccEoEohzctE3rHsE3lKNsHDzadG4/5UrHxIZDZ3idDk5FUTGoDafISfSwM0LxO5t/t96nIPwFZJe+UvHxK5Me4NtbbfHPsIKGN86SGRd8n6vx8Y+GFJRM9XMr/I0RC4tXfIZ+xW5CnJFF8CwCm5SkN/3365FGUU/V3G8dm7FXkqclfb14OLuUmE0jjaINLUIv9H8v3qc/s0yz88nVB6RmfYrchTkjV5zf3qr72mq3QMVv/ZIPJonstKk8hTW56++sHFuD+ir1wmcmO5ogewebuVfhotH42NxypfPiQyW5I8VTHTPxrW+6zOVf7X6rf9TpEiRYoUKVKkyK/sHx2yeHMLju5RAAAAAElFTkSuQmCC" alt="防伪二维码">
-                    </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="cert-wrapper" data-title="vv" data-body="性别：男
-体检日期：2026年7月14日 (有效期一年)
-身份证：411521200506303037
-
-<!-- Failed to upload "Screenshot_20260707_200502.jpg" -->
-
-<img width="3072" height="4096" alt="Image" src="https://github.com/user-attachments/assets/ccde448c-0613-4b0c-8092-0aeda6fdb7ad" />" data-issue-number="19" style="position: relative;">
-            <!-- 编辑按钮 -->
-            <button id="editBtn_19" class="edit-btn" style="display: none; position: absolute; bottom: 12px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
-            <button id="saveBtn_19" class="save-btn" style="display: none; position: absolute; bottom: 12px; right: 100px; background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">保存</button>
-            <button id="deleteBtn_19" class="delete-btn" style="display: none; position: absolute; bottom: 12px; right: 190px; background: #e53e3e; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">删除</button>
-            <div id="editStatus_19" style="display: none; position: absolute; bottom: 52px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20;"></div>
-            
-            <div class="cert-module top-card">
-                <div class="top-title" id="title_19">广东省食品从业人员健康证明</div>
-                <div class="top-content">
-                    <div class="text-container">
-                        <div class="info-line">
-                            <span class="label">姓 名</span>
-                            <span class="colon">∶</span>
-                            <span class="content" id="name_19">vv</span>
-                        </div>
-                        <div class="info-line">
-                            <span class="label">性 别</span>
-                            <span class="colon">∶</span>
-                            <span class="content" id="gender_19">男</span>
-                        </div>
-                        <div class="id-group">
-                            <div class="info-line">
-                                <span class="label">身份证号码</span>
-                                <span class="colon">∶</span>
-                                <span class="content" id="id_19">411521200506303037</span>
-                            </div>
-                            <div class="info-line">(或其它有效证明)</div>
-                        </div>
-                        <div class="info-line">
-                            <span class="label">体检单位</span>
-                            <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
-                        </div>
-                        <div class="info-line last-line">
-                            <span class="label">体检日期</span>
-                            <span class="colon">∶</span>
-                            <span class="content" id="date_19">2026年7月14日 (有效期一年)</span>
-                        </div>
-                    </div>
-                    <div class="photo">
-                        <img src="https://github.com/user-attachments/assets/ccde448c-0613-4b0c-8092-0aeda6fdb7ad" alt="持证人照片">
-                    </div>
-                </div>
-            </div>
-            <div class="cert-module middle-card">
-                <div class="middle-line">广东省食品从业人员</div>
-                <div class="middle-line">健康证明</div>
-            </div>
-            <div class="bottom-card">
-                <div class="qrcode-area">
-                    <div class="qrcode-img">
-                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADf0lEQVR4nO2cXWrrMBCFz1wZ+ihDF9Cl2DsLXVJ3YC+lCyhIjwGbcx8kWf5JL5eSkKSceShp0EdsGObnzNhG/MzGPz8EAZEiRYoUKVKkyMcjLVsDjO1sQGxg1gLWxwYAZrM+llP9na9W5GORIEmiI0kGR8CTgJ/AIR1w5ACADI6rw8Nz3afI25Mxxxfy0wxdAOwUHNHxbOiCS+1bClX3v1qRj0Q2l7+OLYg4GxFfad3HVX9T5O8i9z5k3YebMLaAwU8NgNk4vp3toCM9132KvB1ZfMgTQASICAD+qyFikx2p+8zH1o70XPcp8ubkaGa5EQNgp88XWg9HdOWT9ZhTW3b/qxX5UGQKMDW+cGwdAH82wJ+NYwsr323T2XPdp8hbk9bHBlkL8hP4bg04wNFOAcguBcB6zIpDIneWJB94kuQEwE9Axwkc/JSPDJ5EUoq89CGRe8uyYQAAuOJI20/D4j4AIB8SeZEs6jTGFgAwG8bWsVZGdgoAyUXAfs77FHl9suQyOGY5uuSt5FLbTym/KQ6J3NiuHlrnrVL7pD81v8mHRG6M1Qbk0WodweYiOtTBK+RDIndWXagURWTuy4DUodVzNSzJh0QuVuuhuuyRG/xl2WOpkdTbi/yWTL29JzlgtpSykPTEIip2YTl3nd8U+bvIsZ3NTmW0WrYXHVOr3wWUpj9qXiZyb+venmTVpPMy40ZZTIUSlctErq3Uyktbv5GBNo7kVj2cfEjkluS7NbBT6cGA+LIM6R2tj2bowmwp5/VX+U2Rv4Vcx6Eq/tTt/KU5Swqk9CGRR8uZqahCxYeAKhJxWBJap1wm8mDZJYLL0acLedkjzzXCcq7I1vIhkVuriWo1ZK37Q8ml4DQvE/lvMgtC5ZlWvreO5V9H65M3zabny0QeLe9Tj29TQwDICmI0EHCTpVXqaGDSGP1Xw/tdrchHJFd9WRnP58oo78IuGiMAaOYq8oJxa+uFoUVovPCdfEhksZTLygzMTQQAjm0Auo8XYmwDCMwNEF+nNflc9ynyduT+vR+lG8tZra4wKg6J/M6yDwWg7FMvemLYKJDJ5EMiD7bzoaRJc7e9GIBSdkNze5E7O8Sh1JehhBu/WZJVHBJ5tH09lFcY80urskRdFGvtD4m8YMmHspV6KD0l5DdPmnXLTERxSOTaju+m+k/TO85FihQpUqRIkb+E/Avr+HMti011VAAAAABJRU5ErkJggg==" alt="防伪二维码">
                     </div>
                     <div class="qrcode-title">此健康信息已上报平台</div>
                 </div>
