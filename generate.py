@@ -63,6 +63,7 @@ def build_card(issue, style='A'):
     duan2 = get_field('二段') or '健康证明'
     afangwei = get_field('A版防伪字段') or '防伪标识二维码'
     bhealth = get_field('B版健康信息') or '此健康信息已上报平台'
+    hospital = get_field('体检单位') or '广州东仁医院'
     a_show = get_field('A版三卡显示') or '0'
     b_show = get_field('B版三卡显示') or '0'
 
@@ -136,7 +137,7 @@ def build_card(issue, style='A'):
                         <div class="info-line">
                             <span style="font-weight: bold;">体检单位</span>
                             <span>∶</span>
-                            <span>广州东仁医院</span>
+                            <span>{hospital}</span>
                         </div>
                         <div class="info-line last-line">
                             <span style="font-weight: bold;">体检日期</span>
@@ -198,7 +199,7 @@ def build_card(issue, style='A'):
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content">{hospital}</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
