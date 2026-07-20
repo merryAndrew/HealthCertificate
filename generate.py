@@ -67,6 +67,9 @@ def build_card(issue, style='A'):
     else:
         date_display = '未选择日期 (有效期一年)'
 
+    status_match = re.search(r'支付状态[：:]\s*(.+)', all_text)
+    payment_status = status_match.group(1).strip() if status_match else '未付款'
+
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
@@ -78,6 +81,9 @@ def build_card(issue, style='A'):
     buffered = BytesIO()
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+
+    # 状态标签颜色
+    status_color = '#e53e3e' if '未付款' in payment_status else '#2f9e44'
 
     if style == 'A':
         return f'''
@@ -143,8 +149,19 @@ def build_card(issue, style='A'):
         </div>
         '''
     else:
+        # B版 - 增加编辑功能（根据URL参数决定是否显示编辑按钮）
         return f'''
-        <div class="cert-wrapper" data-title="{title}">
+        <div class="cert-wrapper" data-title="{title}" data-body="{body}" data-issue-number="{issue['number']}" style="position: relative;">
+            <!-- 支付状态标签 -->
+            <div class="status-badge" id="statusBadge_{issue['number']}" style="position: absolute; top: 12px; right: 12px; background: {status_color}; color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 10;">
+                {payment_status}
+            </div>
+            
+            <!-- 编辑按钮（默认隐藏，URL带edit参数才显示） -->
+            <button id="editBtn_{issue['number']}" class="edit-btn" style="display: none; position: absolute; bottom: 12px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
+            <button id="saveBtn_{issue['number']}" class="save-btn" style="display: none; position: absolute; bottom: 12px; right: 100px; background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">保存</button>
+            <div id="editStatus_{issue['number']}" style="display: none; position: absolute; bottom: 52px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20;"></div>
+            
             <div class="cert-module top-card">
                 <div class="top-title">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -152,17 +169,18 @@ def build_card(issue, style='A'):
                         <div class="info-line">
                             <span class="label">姓 名</span>
                             <span class="colon">∶</span>
-                            <span class="content">{name}</span>
-                            <span class="gender-separator"></span>
+                            <span class="content" id="name_{issue['number']}">{name}</span>
+                        </div>
+                        <div class="info-line">
                             <span class="label">性 别</span>
                             <span class="colon">∶</span>
-                            <span class="content">{gender}</span>
+                            <span class="content" id="gender_{issue['number']}">{gender}</span>
                         </div>
                         <div class="id-group">
                             <div class="info-line">
                                 <span class="label">身份证号码</span>
                                 <span class="colon">∶</span>
-                                <span class="content">{id_num}</span>
+                                <span class="content" id="id_{issue['number']}">{id_num}</span>
                             </div>
                             <div class="info-line">(或其它有效证明)</div>
                         </div>
@@ -174,7 +192,12 @@ def build_card(issue, style='A'):
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
                             <span class="colon">∶</span>
-                            <span class="content">{date_display}</span>
+                            <span class="content" id="date_{issue['number']}">{date_display}</span>
+                        </div>
+                        <div class="info-line" style="margin-top: 6px;">
+                            <span class="label">支付状态</span>
+                            <span class="colon">∶</span>
+                            <span class="content" id="status_{issue['number']}">{payment_status}</span>
                         </div>
                     </div>
                     <div class="photo">
@@ -208,6 +231,208 @@ for issue in issues:
 cards_A.reverse()
 cards_B.reverse()
 
+# ===== B版（index.html）增加编辑逻辑 =====
+html_B = f'''<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>健康证查询</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }}
+        .cert-wrapper {{ max-width: 450px; margin: 0 auto 20px auto; position: relative; }}
+        .cert-module {{ background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }}
+        .top-card {{ font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }}
+        .top-title {{ text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }}
+        .top-content {{ display: flex; justify-content: space-between; align-items: flex-start; flex: 1; }}
+        .text-container {{ width: 65%; display: flex; flex-direction: column; height: 100%; }}
+        .info-line {{ margin-bottom: 6px; white-space: nowrap; display: flex; align-items: center; gap: 1px; }}
+        .label {{}} .colon {{}} .content {{ font-weight: bold; }}
+        .gender-separator {{ margin-left: 10px; }}
+        .id-group {{ margin-bottom: 6px; }}
+        .id-group .info-line {{ margin-bottom: 0; line-height: 1.2; }}
+        .last-line {{ margin-top: auto; margin-bottom: 6px; }}
+        .photo {{ width: 70px; height: 90px; border: 1px solid #ddd; margin-left: 10px; }}
+        .photo img {{ width: 100%; height: 100%; object-fit: cover; }}
+        .middle-card {{ display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; color: #333; text-align: center; width: 100%; height: 180px; font-weight: bold; }}
+        .middle-line {{ margin: 5px 0; }}
+        .bottom-card {{ border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 11px; text-align: center; background: #f8f8f8; box-shadow: 0 8px 16px rgba(0,0,0,0.35); }}
+        .qrcode-area {{ text-align: center; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }}
+        .qrcode-img {{ width: 120px; height: 120px; margin: 0 auto 10px; }}
+        .qrcode-img img {{ width: 100%; height: 100%; object-fit: contain; }}
+        .qrcode-title {{ color: #333; margin-bottom: 0; font-size: 13px; font-weight: bold; }}
+        
+        /* 编辑模式样式 */
+        .editable-field {{
+            border: 1px dashed #2b6ef0;
+            border-radius: 4px;
+            padding: 2px 6px;
+            background: #fff;
+            min-width: 40px;
+            display: inline-block;
+        }}
+        .editable-field:focus {{
+            outline: none;
+            border-color: #2f9e44;
+            box-shadow: 0 0 0 2px rgba(47, 158, 68, 0.2);
+        }}
+        .edit-mode .content {{
+            cursor: text;
+        }}
+    </style>
+</head>
+<body>
+    {''.join(cards_B)}
+    
+    <script>
+        (function() {{
+            // ===== 检测编辑权限 =====
+            const params = new URLSearchParams(window.location.search);
+            const editParam = params.get('edit');
+            const isEditor = (editParam === '123456');
+            
+            if (!isEditor) return;
+            
+            // ===== 显示所有编辑按钮 =====
+            document.querySelectorAll('.edit-btn').forEach(btn => {{
+                btn.style.display = 'inline-block';
+            }});
+            
+            // ===== 编辑功能 =====
+            document.querySelectorAll('.edit-btn').forEach(btn => {{
+                const wrapper = btn.closest('.cert-wrapper');
+                const issueNumber = wrapper.dataset.issueNumber;
+                const nameEl = document.getElementById('name_' + issueNumber);
+                const genderEl = document.getElementById('gender_' + issueNumber);
+                const idEl = document.getElementById('id_' + issueNumber);
+                const dateEl = document.getElementById('date_' + issueNumber);
+                const statusEl = document.getElementById('status_' + issueNumber);
+                const saveBtn = document.getElementById('saveBtn_' + issueNumber);
+                const statusBadge = document.getElementById('statusBadge_' + issueNumber);
+                const editStatus = document.getElementById('editStatus_' + issueNumber);
+                
+                btn.addEventListener('click', function() {{
+                    // 让所有字段变成可编辑
+                    [nameEl, genderEl, idEl, dateEl, statusEl].forEach(el => {{
+                        if (el) {{
+                            el.contentEditable = true;
+                            el.classList.add('editable-field');
+                        }}
+                    }});
+                    // 性别特殊处理：改为下拉选择
+                    if (genderEl) {{
+                        const currentGender = genderEl.textContent.trim();
+                        genderEl.contentEditable = false;
+                        genderEl.innerHTML = `<select class="gender-select" style="padding:2px 6px;border-radius:4px;border:1px solid #2b6ef0;font-size:13px;">
+                            <option value="男" ${{currentGender === '男' ? 'selected' : ''}}>男</option>
+                            <option value="女" ${{currentGender === '女' ? 'selected' : ''}}>女</option>
+                        </select>`;
+                    }}
+                    saveBtn.style.display = 'inline-block';
+                    btn.style.display = 'none';
+                    editStatus.textContent = '点击保存修改';
+                    editStatus.style.display = 'block';
+                }});
+                
+                saveBtn.addEventListener('click', function() {{
+                    // 读取编辑后的值
+                    const newName = nameEl ? nameEl.textContent.trim() : '';
+                    let newGender = '';
+                    const genderSelect = genderEl ? genderEl.querySelector('.gender-select') : null;
+                    if (genderSelect) {{
+                        newGender = genderSelect.value;
+                    }} else {{
+                        newGender = genderEl ? genderEl.textContent.trim() : '男';
+                    }}
+                    const newId = idEl ? idEl.textContent.trim() : '';
+                    const newDate = dateEl ? dateEl.textContent.trim() : '';
+                    const newStatus = statusEl ? statusEl.textContent.trim() : '未付款';
+                    
+                    // 构建新的 Issue 正文
+                    const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}\\n支付状态：${{newStatus}}`;
+                    
+                    // 获取 GitHub Token（从 localStorage 读取，或在页面中配置）
+                    let token = localStorage.getItem('github_token');
+                    if (!token) {{
+                        token = prompt('请输入您的 GitHub Token（编辑需要）:');
+                        if (token) localStorage.setItem('github_token', token);
+                    }}
+                    if (!token) {{
+                        editStatus.textContent = '❌ 需要 Token 才能保存';
+                        editStatus.style.color = '#e53e3e';
+                        return;
+                    }}
+                    
+                    const repo = 'merryAndrew/HealthCertificate';
+                    const url = `https://api.github.com/repos/${{repo}}/issues/${{issueNumber}}`;
+                    
+                    editStatus.textContent = '⏳ 保存中...';
+                    editStatus.style.color = '#2b6ef0';
+                    
+                    fetch(url, {{
+                        method: 'PATCH',
+                        headers: {{
+                            'Authorization': `Bearer ${{token}}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json',
+                        }},
+                        body: JSON.stringify({{
+                            body: body
+                        }})
+                    }})
+                    .then(res => {{
+                        if (!res.ok) throw new Error('保存失败: ' + res.status);
+                        return res.json();
+                    }})
+                    .then(data => {{
+                        editStatus.textContent = '✅ 保存成功！正在重新生成...';
+                        editStatus.style.color = '#2f9e44';
+                        // 更新状态标签
+                        if (statusBadge) {{
+                            const isPaid = newStatus.includes('已付款');
+                            statusBadge.textContent = newStatus;
+                            statusBadge.style.background = isPaid ? '#2f9e44' : '#e53e3e';
+                        }}
+                        // 恢复只读模式
+                        [nameEl, idEl, dateEl, statusEl].forEach(el => {{
+                            if (el) {{
+                                el.contentEditable = false;
+                                el.classList.remove('editable-field');
+                            }}
+                        }});
+                        if (genderSelect) {{
+                            const genderVal = genderSelect.value;
+                            genderEl.innerHTML = genderVal;
+                        }}
+                        saveBtn.style.display = 'none';
+                        btn.style.display = 'inline-block';
+                        // 提示等待 Actions 重新生成
+                        editStatus.textContent = '⏳ 等待 Actions 重新生成（约1-2分钟）...';
+                        editStatus.style.color = '#b36b1e';
+                        setTimeout(() => {{
+                            editStatus.textContent = '🔄 刷新页面查看更新';
+                            editStatus.style.color = '#2b6ef0';
+                        }}, 3000);
+                    }})
+                    .catch(err => {{
+                        editStatus.textContent = '❌ ' + err.message;
+                        editStatus.style.color = '#e53e3e';
+                    }});
+                }});
+            }});
+        }})();
+    </script>
+</body>
+</html>'''
+
+
+os.makedirs('dist', exist_ok=True)
+with open('dist/index.html', 'w', encoding='utf-8') as f:
+    f.write(html_B)
+
+# A版保持不变（生成 card.html）
 html_A = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -218,7 +443,7 @@ html_A = f'''<!DOCTYPE html>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e0d6c7; padding: 10px; min-height: 100vh; }}
-        .app-wrapper {{ max-width: 360px; margin: 0 auto; }}
+        .app-wrapper {{ max-width: 450px; margin: 0 auto; }}
         .photo .seal-container {{ position: absolute !important; top: 44px !important; left: -47px !important; z-index: 999 !important; }}
         .photo .seal-img {{ width: 63px !important; height: 63px !important; object-fit: contain !important; opacity: 1 !important; display: block !important; }}
         .cert-module {{ background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; height: 180px; }}
@@ -276,69 +501,7 @@ html_A = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
-html_B = f'''<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>健康证查询</title>
-    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }}
-        .cert-wrapper {{ max-width: 360px; margin: 0 auto 20px auto; }}
-        .cert-module {{ background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }}
-        .top-card {{ font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }}
-        .top-title {{ text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }}
-        .top-content {{ display: flex; justify-content: space-between; align-items: flex-start; flex: 1; }}
-        .text-container {{ width: 65%; display: flex; flex-direction: column; height: 100%; }}
-        .info-line {{ margin-bottom: 8px; white-space: nowrap; display: flex; align-items: center; gap: 1px; }}
-        .label {{}} .colon {{}} .content {{ font-weight: bold; }}
-        .gender-separator {{ margin-left: 10px; }}
-        .id-group {{ margin-bottom: 8px; }}
-        .id-group .info-line {{ margin-bottom: 0; line-height: 1.2; }}
-        .last-line {{ margin-top: auto; margin-bottom: 10px; }}
-        .photo {{ width: 70px; height: 90px; border: 1px solid #ddd; margin-left: 10px; }}
-        .photo img {{ width: 100%; height: 100%; object-fit: cover; }}
-        .middle-card {{ display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; color: #333; text-align: center; width: 100%; height: 180px; font-weight: bold; }}
-        .middle-line {{ margin: 5px 0; }}
-        .bottom-card {{ border-radius: 12px; padding: 20px; margin-bottom: 15px; font-size: 11px; text-align: center; background: #f8f8f8; box-shadow: 0 8px 16px rgba(0,0,0,0.35); }}
-        .qrcode-area {{ text-align: center; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; }}
-        .qrcode-img {{ width: 120px; height: 120px; margin: 0 auto 10px; }}
-        .qrcode-img img {{ width: 100%; height: 100%; object-fit: contain; }}
-        .qrcode-title {{ color: #333; margin-bottom: 0; font-size: 13px; font-weight: bold; }}
-    </style>
-</head>
-<body>
-    {''.join(cards_B)}
-    <script>
-        (function() {{
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-            if (id) {{
-                const wrappers = document.querySelectorAll('.cert-wrapper');
-                let found = false;
-                wrappers.forEach(w => {{
-                    const title = w.getAttribute('data-title');
-                    if (title === id) {{
-                        w.style.display = 'block';
-                        found = true;
-                    }} else {{
-                        w.style.display = 'none';
-                    }}
-                }});
-                if (!found) {{
-                    wrappers.forEach(w => w.style.display = 'block');
-                }}
-            }}
-        }})();
-    </script>
-</body>
-</html>'''
 
-os.makedirs('dist', exist_ok=True)
-with open('dist/index.html', 'w', encoding='utf-8') as f:
-    f.write(html_B)
 with open('dist/card.html', 'w', encoding='utf-8') as f:
     f.write(html_A)
 
