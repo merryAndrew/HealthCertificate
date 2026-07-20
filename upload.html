@@ -468,7 +468,6 @@
     <div class="section">
         <div class="section-title">📝 基础信息</div>
 
-        <!-- ===== 新增：标题 ===== -->
         <div class="field">
             <label>标题 <span class="required">*</span></label>
             <input type="text" id="titleInput" placeholder="例如：广东省食品从业人员健康证明" value="广东省食品从业人员健康证明">
@@ -515,7 +514,6 @@
             </div>
         </div>
 
-        <!-- ===== 新增：四个字段 ===== -->
         <div class="field">
             <label>一段（AB版中间第一行）</label>
             <input type="text" id="duan1Input" placeholder="例如：广东省食品从业人员" value="广东省食品从业人员">
@@ -535,21 +533,22 @@
             <label>B版健康信息（仅B版底部）</label>
             <input type="text" id="bhealthInput" placeholder="例如：此健康信息已上报平台" value="此健康信息已上报平台">
         </div>
-        
-<div class="field">
-    <label>A版第三卡片</label>
-    <select id="aCard3Display">
-        <option value="0">显示</option>
-        <option value="1">隐藏</option>
-    </select>
-</div>
-<div class="field">
-    <label>B版第三卡片</label>
-    <select id="bCard3Display">
-        <option value="0">显示</option>
-        <option value="1">隐藏</option>
-    </select>
-</div>
+
+        <!-- ===== 新增：卡三显示控制下拉框 ===== -->
+        <div class="field">
+            <label>A版第三卡片</label>
+            <select id="aCard3Display">
+                <option value="0">显示</option>
+                <option value="1">隐藏</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>B版第三卡片</label>
+            <select id="bCard3Display">
+                <option value="0">显示</option>
+                <option value="1">隐藏</option>
+            </select>
+        </div>
 
         <button class="btn-primary" id="submitBtn">🚀 提交 Issue</button>
 
@@ -584,7 +583,6 @@
         const clearSettingsBtn = document.getElementById('clearSettingsBtn');
         const settingsStatus = document.getElementById('settingsStatus');
 
-        // 新字段
         const titleInput = document.getElementById('titleInput');
         const nameInput = document.getElementById('nameInput');
         const genderInput = document.getElementById('genderInput');
@@ -594,6 +592,8 @@
         const duan2Input = document.getElementById('duan2Input');
         const afangweiInput = document.getElementById('afangweiInput');
         const bhealthInput = document.getElementById('bhealthInput');
+        const aCard3Display = document.getElementById('aCard3Display');
+        const bCard3Display = document.getElementById('bCard3Display');
 
         const avatarFile = document.getElementById('avatarFile');
         const fileSelectBtn = document.getElementById('fileSelectBtn');
@@ -810,6 +810,8 @@
                         duan2Input.value = '健康证明';
                         afangweiInput.value = '防伪标识二维码';
                         bhealthInput.value = '此健康信息已上报平台';
+                        aCard3Display.value = '0';
+                        bCard3Display.value = '0';
                         avatarInput.value = '';
                         avatarPreview.style.display = 'none';
                         avatarFile.value = '';
@@ -850,7 +852,6 @@
                 return;
             }
 
-            // 读取所有字段
             const titleVal = titleInput.value.trim() || '广东省食品从业人员健康证明';
             const name = nameInput.value.trim();
             const gender = genderInput.value;
@@ -860,6 +861,8 @@
             const duan2 = duan2Input.value.trim() || '健康证明';
             const afangwei = afangweiInput.value.trim() || '防伪标识二维码';
             const bhealth = bhealthInput.value.trim() || '此健康信息已上报平台';
+            const aCard3 = aCard3Display.value;
+            const bCard3 = bCard3Display.value;
             const avatar = avatarInput.value.trim() || '';
 
             if (!name || !idNumber) {
@@ -870,7 +873,6 @@
                 return;
             }
 
-            // Issue 标题 = 姓名，正文存所有字段
             const issueTitle = name;
             let body = `标题：${titleVal}\n`;
             body += `姓名：${name}\n`;
@@ -881,6 +883,8 @@
             body += `二段：${duan2}\n`;
             body += `A版防伪字段：${afangwei}\n`;
             body += `B版健康信息：${bhealth}\n`;
+            body += `A版三卡显示：${aCard3}\n`;
+            body += `B版三卡显示：${bCard3}\n`;
             if (avatar) body += `头像图片：${avatar}\n`;
             body += `提交于：${new Date().toLocaleString('zh-CN')}`;
 
