@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>健康证 · 数据管理</title>
     <style>
-        /* 样式与上一版完全一致，为节省篇幅此处省略，请复制之前的完整样式 */
-        /* 但我会在下面提供完整的代码，确保无遗漏 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #f2f4f8; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Roboto, Arial, sans-serif; padding: 20px; color: #1a2332; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); padding: 24px; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 24px; }
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
         .header h1 { font-size: 22px; }
         .header .actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -22,22 +20,54 @@
         .btn-danger:hover { background: #b11f2b; }
         .btn-outline { background: transparent; border: 1px solid #d0d7de; }
         .btn-outline:hover { background: #f6f8fa; }
-        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-info { background: #2b6ef0; color: #fff; }
+        .btn-info:hover { background: #1a5bb5; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
         .btn-close-fail { background: #6b7a8f; color: #fff; padding: 6px 20px; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; }
         .btn-close-fail:hover { background: #4a5a6e; }
+
         .search-bar { position: sticky; top: 0; z-index: 10; background: #fff; padding: 12px 0; margin-bottom: 16px; border-bottom: 2px solid #f0f2f5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .search-bar input { flex: 1; min-width: 200px; padding: 10px 14px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 15px; outline: none; }
         .search-bar input:focus { border-color: #1a2332; box-shadow: 0 0 0 3px rgba(26,35,50,0.12); }
         .search-bar .badge { font-size: 13px; color: #6b7a8f; }
+
         .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { text-align: left; padding: 12px 10px; border-bottom: 2px solid #e1e4e8; background: #f6f8fa; font-weight: 600; }
-        td { padding: 12px 10px; border-bottom: 1px solid #e1e4e8; vertical-align: middle; }
-        tr:hover td { background: #f9fafb; }
-        .avatar { width: 50px; height: 66px; border-radius: 7px; object-fit: cover; background: #e1e4e8; display: block; }
-        .name-cell { white-space: nowrap; min-width: 80px; }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+            border: 1.5px solid #666666;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 10px;
+            border: 1px solid #666666;
+            vertical-align: middle;
+            text-align: center;
+        }
+        th {
+            background: #f6f8fa;
+            font-weight: 600;
+        }
+        tr:hover td { background: #fafbfc; }
+
+        .avatar {
+            width: 50px;
+            height: 66px;
+            border-radius: 7px;
+            object-fit: cover;
+            background: #e1e4e8;
+            display: inline-block;
+        }
+        .name-cell { white-space: nowrap; }
         .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
         .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
+
+        /* 操作列：自适应宽度，按钮分行居中 */
+        .action-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .action-row { display: flex; gap: 4px; justify-content: center; }
 
         /* Toast 居中 */
         .toast-center { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 3000; justify-content: center; align-items: center; }
@@ -118,7 +148,15 @@
     </div>
     <div class="table-wrap" id="tableWrap">
         <table>
-            <thead><tr><th style="width:30px;"><input type="checkbox" id="selectAll"></th><th style="width:60px;">头像</th><th style="min-width:80px;">姓名</th><th>身份证号</th><th style="width:160px;">操作</th></tr></thead>
+            <thead>
+                <tr>
+                    <th style="width:30px;"><input type="checkbox" id="selectAll"></th>
+                    <th style="width:60px;">头像</th>
+                    <th style="min-width:80px;">姓名</th>
+                    <th>身份证号</th>
+                    <th style="min-width:120px;">操作</th>
+                </tr>
+            </thead>
             <tbody id="tableBody"></tbody>
         </table>
         <div id="noData" class="no-data" style="display:none;">暂无数据</div>
@@ -277,7 +315,6 @@
     var allIssues = [], filteredIssues = [], selectedIds = new Set();
     var pollTimer = null;
     var MAX_POLLS = 24;
-    // 存储原始数据，用于检测变化
     var originalData = null;
 
     // ---- Toast 居中 ----
@@ -363,6 +400,12 @@
                 btn.onclick = function() { confirmDelete(parseInt(this.dataset.id)); };
             })(delBtns[k]);
         }
+        var viewBtns = document.querySelectorAll('.view-btn');
+        for (var l = 0; l < viewBtns.length; l++) {
+            (function(btn) {
+                btn.onclick = function() { viewCertificate(parseInt(this.dataset.id)); };
+            })(viewBtns[l]);
+        }
     }
 
     function render() {
@@ -387,13 +430,38 @@
             html += '<td><img class="avatar" src="' + avatarSrc + '" alt="头像"></td>';
             html += '<td class="name-cell"><strong>' + escapeHtml(p.name) + '</strong></td>';
             html += '<td>' + escapeHtml(p.idCard) + '</td>';
-            html += '<td><button class="btn btn-primary btn-sm edit-btn" data-id="' + issue.id + '">编辑</button> ';
-            html += '<button class="btn btn-danger btn-sm delete-btn" data-id="' + issue.id + '">删除</button></td></tr>';
+            // === 操作列 ===
+            html += '<td>';
+            html += '<div class="action-group">';
+            html += '<div class="action-row">';
+            html += '<button class="btn btn-primary btn-sm edit-btn" data-id="' + issue.id + '">编辑</button>';
+            html += '<button class="btn btn-danger btn-sm delete-btn" data-id="' + issue.id + '">删除</button>';
+            html += '</div>';
+            html += '<div class="action-row">';
+            html += '<button class="btn btn-info btn-sm view-btn" data-id="' + issue.id + '">查看健康证</button>';
+            html += '</div>';
+            html += '</div>';
+            html += '</td></tr>';
         }
         tbody.innerHTML = html;
         updateSelectedCount();
         updateSelectAllState();
         bindEvents();
+    }
+
+    // ---- 查看健康证 ----
+    function viewCertificate(id) {
+        var issue = null;
+        for (var i = 0; i < allIssues.length; i++) {
+            if (allIssues[i].id === id) { issue = allIssues[i]; break; }
+        }
+        if (!issue) {
+            showToastCenter('⚠️', '未找到该数据', '');
+            return;
+        }
+        var encodedTitle = encodeURIComponent(issue.title);
+        var url = 'https://merryAndrew.github.io/HealthCertificate/card.html?id=' + encodedTitle;
+        window.open(url, '_blank');
     }
 
     // ---- 加载列表 ----
@@ -464,7 +532,6 @@
         editSubmitBtn.classList.remove('hidden');
         editFailActions.classList.remove('active');
 
-        // 填充表单
         f_title.value = p.raw.titleVal;
         f_name.value = p.name;
         f_gender.value = p.raw.gender;
@@ -481,7 +548,6 @@
         if (p.raw.avatar) { editAvatarPreview.src = p.raw.avatar; editAvatarPreview.style.display = 'block'; }
         else { editAvatarPreview.style.display = 'none'; }
 
-        // ***** 保存原始数据用于变化检测 *****
         originalData = {
             title: f_title.value.trim(),
             name: f_name.value.trim(),
@@ -521,8 +587,7 @@
             bCard3: f_bCard3.value,
             avatar: f_avatar.value.trim()
         };
-        if (!originalData) return true; // 如果没有原始数据，视为有变化
-        // 逐字段比较
+        if (!originalData) return true;
         for (var key in originalData) {
             if (originalData[key] !== current[key]) {
                 return true;
@@ -603,11 +668,10 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
-    // ---- 编辑提交（含变化检测） ----
+    // ---- 编辑提交 ----
     editForm.onsubmit = function(e) {
         e.preventDefault();
 
-        // ***** 先检测数据是否变化 *****
         if (!hasDataChanged()) {
             showToastCenter('ℹ️', '数据并无发生变化', '无需更新');
             editModalOverlay.classList.remove('active');
