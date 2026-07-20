@@ -268,32 +268,62 @@ html_A = f'''<!DOCTYPE html>
         .notice-content {{ color: #856404; line-height: 1.4; }}
         .gender-separator {{ margin-left: 15px; }}
         .cert-wrapper {{ margin-bottom: 20px; }}
+        .not-found {{
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 18px;
+            color: #666;
+            background: #f8f8f8;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }}
     </style>
 </head>
 <body>
     <div class="app-wrapper">
+        <div id="notFoundMessage" class="not-found" style="display: none;">未找到该健康证</div>
         {''.join(cards_A)}
     </div>
     <script>
         (function() {{
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
+            const admin = params.get('admin');
+            const wrappers = document.querySelectorAll('.cert-wrapper');
+            const notFound = document.getElementById('notFoundMessage');
+            
+            // 超级管理员：admin=0000 显示全部
+            if (admin === '0000') {{
+                wrappers.forEach(w => w.style.display = 'block');
+                notFound.style.display = 'none';
+                return;
+            }}
+            
+            // 有 id 参数：按 id 过滤
             if (id) {{
-                const wrappers = document.querySelectorAll('.cert-wrapper');
+                let decodedId = '';
+                try {{ decodedId = decodeURIComponent(id); }} catch(e) {{ decodedId = id; }}
                 let found = false;
                 wrappers.forEach(w => {{
                     const title = w.getAttribute('data-title');
-                    if (title === id) {{
+                    if (title === decodedId) {{
                         w.style.display = 'block';
                         found = true;
                     }} else {{
                         w.style.display = 'none';
                     }}
                 }});
-                if (!found) {{
-                    wrappers.forEach(w => w.style.display = 'block');
+                if (found) {{
+                    notFound.style.display = 'none';
+                }} else {{
+                    notFound.style.display = 'block';
                 }}
+                return;
             }}
+            
+            // 没有 id 且不是管理员：显示"未找到"
+            wrappers.forEach(w => w.style.display = 'none');
+            notFound.style.display = 'block';
         }})();
     </script>
 </body>
@@ -330,30 +360,60 @@ html_B = f'''<!DOCTYPE html>
         .qrcode-img {{ width: 120px; height: 120px; margin: 0 auto 10px; }}
         .qrcode-img img {{ width: 100%; height: 100%; object-fit: contain; }}
         .qrcode-title {{ color: #333; margin-bottom: 0; font-size: 13px; font-weight: bold; }}
+        .not-found {{
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 18px;
+            color: #666;
+            background: #f8f8f8;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }}
     </style>
 </head>
 <body>
+    <div id="notFoundMessage" class="not-found" style="display: none;">未找到该健康证</div>
     {''.join(cards_B)}
     <script>
         (function() {{
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
+            const admin = params.get('admin');
+            const wrappers = document.querySelectorAll('.cert-wrapper');
+            const notFound = document.getElementById('notFoundMessage');
+            
+            // 超级管理员：admin=0000 显示全部
+            if (admin === '0000') {{
+                wrappers.forEach(w => w.style.display = 'block');
+                notFound.style.display = 'none';
+                return;
+            }}
+            
+            // 有 id 参数：按 id 过滤
             if (id) {{
-                const wrappers = document.querySelectorAll('.cert-wrapper');
+                let decodedId = '';
+                try {{ decodedId = decodeURIComponent(id); }} catch(e) {{ decodedId = id; }}
                 let found = false;
                 wrappers.forEach(w => {{
                     const title = w.getAttribute('data-title');
-                    if (title === id) {{
+                    if (title === decodedId) {{
                         w.style.display = 'block';
                         found = true;
                     }} else {{
                         w.style.display = 'none';
                     }}
                 }});
-                if (!found) {{
-                    wrappers.forEach(w => w.style.display = 'block');
+                if (found) {{
+                    notFound.style.display = 'none';
+                }} else {{
+                    notFound.style.display = 'block';
                 }}
+                return;
             }}
+            
+            // 没有 id 且不是管理员：显示"未找到"
+            wrappers.forEach(w => w.style.display = 'none');
+            notFound.style.display = 'block';
         }})();
     </script>
 </body>
