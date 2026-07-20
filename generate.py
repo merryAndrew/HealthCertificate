@@ -70,6 +70,10 @@ def build_card(issue, style='A'):
     status_match = re.search(r'支付状态[：:]\s*(.+)', all_text)
     payment_status = status_match.group(1).strip() if status_match else '未付款'
 
+    # 检测是否隐藏二维码
+    qr_hidden_match = re.search(r'隐藏二维码[：:]\s*(.+)', all_text)
+    qr_hidden = qr_hidden_match.group(1).strip() if qr_hidden_match else '否'
+
     img_url = extract_first_image(all_text)
     if not img_url:
         img_url = 'https://via.placeholder.com/70x90?text=No+Photo'
@@ -82,10 +86,10 @@ def build_card(issue, style='A'):
     qr.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-    # 状态标签颜色
     status_color = '#e53e3e' if '未付款' in payment_status else '#2f9e44'
 
     if style == 'A':
+        qr_display = 'none' if qr_hidden == '是' else 'block'
         return f'''
         <div class="cert-wrapper" data-title="{title}">
             <div class="cert-module top-card">
@@ -132,7 +136,7 @@ def build_card(issue, style='A'):
                 <div class="middle-line">健康证明</div>
             </div>
             <div class="bottom-card">
-                <div class="qrcode-area">
+                <div class="qrcode-area" id="qrArea_{issue['number']}" style="display: {qr_display};">
                     <div class="qrcode-title">防伪标识二维码</div>
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
@@ -149,7 +153,8 @@ def build_card(issue, style='A'):
         </div>
         '''
     else:
-        # B版 - 增加编辑功能（根据URL参数决定是否显示编辑按钮）
+        # B版 - 所有卡片可编辑，二维码可删除
+        qr_display = 'none' if qr_hidden == '是' else 'block'
         return f'''
         <div class="cert-wrapper" data-title="{title}" data-body="{body}" data-issue-number="{issue['number']}" style="position: relative;">
             <!-- 支付状态标签 -->
@@ -157,7 +162,7 @@ def build_card(issue, style='A'):
                 {payment_status}
             </div>
             
-            <!-- 编辑按钮（默认隐藏，URL带edit参数才显示） -->
+            <!-- 编辑按钮（默认隐藏） -->
             <button id="editBtn_{issue['number']}" class="edit-btn" style="display: none; position: absolute; bottom: 12px; right: 12px; background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">编辑</button>
             <button id="saveBtn_{issue['number']}" class="save-btn" style="display: none; position: absolute; bottom: 12px; right: 100px; background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; z-index: 20;">保存</button>
             <div id="editStatus_{issue['number']}" style="display: none; position: absolute; bottom: 52px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20;"></div>
@@ -210,7 +215,7 @@ def build_card(issue, style='A'):
                 <div class="middle-line">健康证明</div>
             </div>
             <div class="bottom-card">
-                <div class="qrcode-area">
+                <div class="qrcode-area" id="qrArea_{issue['number']}" style="display: {qr_display};">
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
                     </div>
@@ -231,7 +236,6 @@ for issue in issues:
 cards_A.reverse()
 cards_B.reverse()
 
-# ===== B版（index.html）增加编辑逻辑 =====
 html_B = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -264,7 +268,6 @@ html_B = f'''<!DOCTYPE html>
         .qrcode-img img {{ width: 100%; height: 100%; object-fit: contain; }}
         .qrcode-title {{ color: #333; margin-bottom: 0; font-size: 13px; font-weight: bold; }}
         
-        /* 编辑模式样式 */
         .editable-field {{
             border: 1px dashed #2b6ef0;
             border-radius: 4px;
@@ -278,9 +281,6 @@ html_B = f'''<!DOCTYPE html>
             border-color: #2f9e44;
             box-shadow: 0 0 0 2px rgba(47, 158, 68, 0.2);
         }}
-        .edit-mode .content {{
-            cursor: text;
-        }}
     </style>
 </head>
 <body>
@@ -288,19 +288,16 @@ html_B = f'''<!DOCTYPE html>
     
     <script>
         (function() {{
-            // ===== 检测编辑权限 =====
             const params = new URLSearchParams(window.location.search);
             const editParam = params.get('edit');
             const isEditor = (editParam === '123456');
             
             if (!isEditor) return;
             
-            // ===== 显示所有编辑按钮 =====
             document.querySelectorAll('.edit-btn').forEach(btn => {{
                 btn.style.display = 'inline-block';
             }});
             
-            // ===== 编辑功能 =====
             document.querySelectorAll('.edit-btn').forEach(btn => {{
                 const wrapper = btn.closest('.cert-wrapper');
                 const issueNumber = wrapper.dataset.issueNumber;
@@ -312,16 +309,17 @@ html_B = f'''<!DOCTYPE html>
                 const saveBtn = document.getElementById('saveBtn_' + issueNumber);
                 const statusBadge = document.getElementById('statusBadge_' + issueNumber);
                 const editStatus = document.getElementById('editStatus_' + issueNumber);
+                const qrArea = document.getElementById('qrArea_' + issueNumber);
+                
+                let qrDeleted = false;
                 
                 btn.addEventListener('click', function() {{
-                    // 让所有字段变成可编辑
                     [nameEl, genderEl, idEl, dateEl, statusEl].forEach(el => {{
                         if (el) {{
                             el.contentEditable = true;
                             el.classList.add('editable-field');
                         }}
                     }});
-                    // 性别特殊处理：改为下拉选择
                     if (genderEl) {{
                         const currentGender = genderEl.textContent.trim();
                         genderEl.contentEditable = false;
@@ -330,6 +328,23 @@ html_B = f'''<!DOCTYPE html>
                             <option value="女" ${{currentGender === '女' ? 'selected' : ''}}>女</option>
                         </select>`;
                     }}
+                    // 添加"删除二维码"复选框
+                    const qrCheckbox = document.createElement('div');
+                    qrCheckbox.id = 'qrCheckbox_' + issueNumber;
+                    qrCheckbox.style.cssText = 'margin-top: 8px; font-size: 13px; color: #333;';
+                    qrCheckbox.innerHTML = `
+                        <label style="display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="qrDel_${{issueNumber}}" ${{qrArea && qrArea.style.display === 'none' ? 'checked' : ''}}> 
+                            删除二维码
+                        </label>
+                    `;
+                    const container = genderEl ? genderEl.closest('.text-container') : null;
+                    if (container) {{
+                        const existing = document.getElementById('qrCheckbox_' + issueNumber);
+                        if (existing) existing.remove();
+                        container.appendChild(qrCheckbox);
+                    }}
+                    
                     saveBtn.style.display = 'inline-block';
                     btn.style.display = 'none';
                     editStatus.textContent = '点击保存修改';
@@ -337,7 +352,6 @@ html_B = f'''<!DOCTYPE html>
                 }});
                 
                 saveBtn.addEventListener('click', function() {{
-                    // 读取编辑后的值
                     const newName = nameEl ? nameEl.textContent.trim() : '';
                     let newGender = '';
                     const genderSelect = genderEl ? genderEl.querySelector('.gender-select') : null;
@@ -350,10 +364,11 @@ html_B = f'''<!DOCTYPE html>
                     const newDate = dateEl ? dateEl.textContent.trim() : '';
                     const newStatus = statusEl ? statusEl.textContent.trim() : '未付款';
                     
-                    // 构建新的 Issue 正文
-                    const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}\\n支付状态：${{newStatus}}`;
+                    const qrCheckbox = document.getElementById('qrDel_' + issueNumber);
+                    const qrHidden = (qrCheckbox && qrCheckbox.checked) ? '是' : '否';
                     
-                    // 获取 GitHub Token（从 localStorage 读取，或在页面中配置）
+                    const body = `姓名：${{newName}}\\n性别：${{newGender}}\\n身份证：${{newId}}\\n体检日期：${{newDate}}\\n支付状态：${{newStatus}}\\n隐藏二维码：${{qrHidden}}`;
+                    
                     let token = localStorage.getItem('github_token');
                     if (!token) {{
                         token = prompt('请输入您的 GitHub Token（编辑需要）:');
@@ -389,13 +404,14 @@ html_B = f'''<!DOCTYPE html>
                     .then(data => {{
                         editStatus.textContent = '✅ 保存成功！正在重新生成...';
                         editStatus.style.color = '#2f9e44';
-                        // 更新状态标签
                         if (statusBadge) {{
                             const isPaid = newStatus.includes('已付款');
                             statusBadge.textContent = newStatus;
                             statusBadge.style.background = isPaid ? '#2f9e44' : '#e53e3e';
                         }}
-                        // 恢复只读模式
+                        if (qrArea) {{
+                            qrArea.style.display = (qrHidden === '是') ? 'none' : 'block';
+                        }}
                         [nameEl, idEl, dateEl, statusEl].forEach(el => {{
                             if (el) {{
                                 el.contentEditable = false;
@@ -406,9 +422,10 @@ html_B = f'''<!DOCTYPE html>
                             const genderVal = genderSelect.value;
                             genderEl.innerHTML = genderVal;
                         }}
+                        const cb = document.getElementById('qrCheckbox_' + issueNumber);
+                        if (cb) cb.remove();
                         saveBtn.style.display = 'none';
                         btn.style.display = 'inline-block';
-                        // 提示等待 Actions 重新生成
                         editStatus.textContent = '⏳ 等待 Actions 重新生成（约1-2分钟）...';
                         editStatus.style.color = '#b36b1e';
                         setTimeout(() => {{
@@ -427,12 +444,6 @@ html_B = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
-
-os.makedirs('dist', exist_ok=True)
-with open('dist/index.html', 'w', encoding='utf-8') as f:
-    f.write(html_B)
-
-# A版保持不变（生成 card.html）
 html_A = f'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -470,6 +481,7 @@ html_A = f'''<!DOCTYPE html>
         .notice-content {{ color: #856404; line-height: 1.4; }}
         .gender-separator {{ margin-left: 15px; }}
         .cert-wrapper {{ margin-bottom: 20px; }}
+        .qr-area-hidden {{ display: none; }}
     </style>
 </head>
 <body>
@@ -501,7 +513,9 @@ html_A = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
-
+os.makedirs('dist', exist_ok=True)
+with open('dist/index.html', 'w', encoding='utf-8') as f:
+    f.write(html_B)
 with open('dist/card.html', 'w', encoding='utf-8') as f:
     f.write(html_A)
 
