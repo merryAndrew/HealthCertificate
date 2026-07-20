@@ -54,6 +54,18 @@ def build_card(issue, style='A'):
 
     name = title
 
+    def get_field(key):
+        match = re.search(rf'{key}[：:]\s*(.+)', all_text)
+        return match.group(1).strip() if match else ''
+
+    title_val = get_field('标题') or '广东省食品从业人员健康证明'
+    duan1 = get_field('一段') or '广东省食品从业人员'
+    duan2 = get_field('二段') or '健康证明'
+    afangwei = get_field('A版防伪字段') or '防伪标识二维码'
+    bhealth = get_field('B版健康信息') or '此健康信息已上报平台'
+    a_show = get_field('A版三卡显示') or '0'
+    b_show = get_field('B版三卡显示') or '0'
+
     gender_match = re.search(r'性别[：:]\s*(.+)', all_text)
     gender = gender_match.group(1).strip() if gender_match else '男'
 
@@ -80,10 +92,29 @@ def build_card(issue, style='A'):
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
     if style == 'A':
+        bottom_html = ''
+        if a_show == '0':
+            bottom_html = f'''
+            <div class="bottom-card">
+                <div class="qrcode-area">
+                    <div class="qrcode-title">{afangwei}</div>
+                    <div class="qrcode-img">
+                        <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
+                    </div>
+                </div>
+                <div class="notice">
+                    <div class="notice-title">
+                        <i class="fas fa-exclamation-circle exclamation-icon"></i>
+                        关于申请实体证明通知：
+                    </div>
+                    <div class="notice-content">目前实体证明申请的入口已经关闭，全面推广电子证，请广大从业人员和用人单位积极使用。如对查询信息存疑，请与体检机构联系。</div>
+                </div>
+            </div>
+            '''
         return f'''
         <div class="cert-wrapper" data-title="{title}">
             <div class="cert-module top-card">
-                <div class="top-title">广东省食品从业人员健康证明</div>
+                <div class="top-title">{title_val}</div>
                 <div class="top-content">
                     <div class="text-container">
                         <div class="info-line">
@@ -122,31 +153,29 @@ def build_card(issue, style='A'):
                 </div>
             </div>
             <div class="cert-module middle-card">
-                <div class="middle-line">广东省食品从业人员</div>
-                <div class="middle-line">健康证明</div>
+                <div class="middle-line">{duan1}</div>
+                <div class="middle-line">{duan2}</div>
             </div>
-            <div class="bottom-card">
-                <div class="qrcode-area">
-                    <div class="qrcode-title">防伪标识二维码</div>
-                    <div class="qrcode-img">
-                        <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
-                    </div>
-                </div>
-                <div class="notice">
-                    <div class="notice-title">
-                        <i class="fas fa-exclamation-circle exclamation-icon"></i>
-                        关于申请实体证明通知：
-                    </div>
-                    <div class="notice-content">目前实体证明申请的入口已经关闭，全面推广电子证，请广大从业人员和用人单位积极使用。如对查询信息存疑，请与体检机构联系。</div>
-                </div>
-            </div>
+            {bottom_html}
         </div>
         '''
     else:
+        bottom_html = ''
+        if b_show == '0':
+            bottom_html = f'''
+            <div class="bottom-card">
+                <div class="qrcode-area">
+                    <div class="qrcode-img">
+                        <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
+                    </div>
+                    <div class="qrcode-title">{bhealth}</div>
+                </div>
+            </div>
+            '''
         return f'''
         <div class="cert-wrapper" data-title="{title}">
             <div class="cert-module top-card">
-                <div class="top-title">广东省食品从业人员健康证明</div>
+                <div class="top-title">{title_val}</div>
                 <div class="top-content">
                     <div class="text-container">
                         <div class="info-line">
@@ -183,17 +212,10 @@ def build_card(issue, style='A'):
                 </div>
             </div>
             <div class="cert-module middle-card">
-                <div class="middle-line">广东省食品从业人员</div>
-                <div class="middle-line">健康证明</div>
+                <div class="middle-line">{duan1}</div>
+                <div class="middle-line">{duan2}</div>
             </div>
-            <div class="bottom-card">
-                <div class="qrcode-area">
-                    <div class="qrcode-img">
-                        <img src="data:image/png;base64,{qr_base64}" alt="防伪二维码">
-                    </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
-                </div>
-            </div>
+            {bottom_html}
         </div>
         '''
 
