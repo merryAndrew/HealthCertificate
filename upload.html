@@ -12,25 +12,14 @@
             padding: 16px;
             color: #1a2332;
         }
-        .app {
-            max-width: 480px;
-            margin: 0 auto;
-        }
+        .app { max-width: 480px; margin: 0 auto; }
         .header {
             padding: 8px 0 4px;
             text-align: center;
         }
-        .header h1 {
-            font-size: 22px;
-            font-weight: 700;
-            color: #0a1628;
-            letter-spacing: -0.3px;
-        }
-        .header p {
-            font-size: 14px;
-            color: #6b7a8f;
-            margin-top: 2px;
-        }
+        .header h1 { font-size: 22px; font-weight: 700; color: #0a1628; }
+        .header p { font-size: 14px; color: #6b7a8f; margin-top: 2px; }
+
         .section {
             background: #ffffff;
             border-radius: 16px;
@@ -45,6 +34,9 @@
             margin-bottom: 14px;
             padding-bottom: 10px;
             border-bottom: 1px solid #f0f2f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .section-title .badge {
             font-size: 11px;
@@ -52,12 +44,23 @@
             color: #6b7a8f;
             margin-left: 8px;
         }
-        .field {
-            margin-bottom: 14px;
+        .section-title .btn-manage {
+            font-size: 13px;
+            font-weight: 500;
+            background: #2b6ef0;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 14px;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.2s;
         }
-        .field:last-child {
-            margin-bottom: 0;
-        }
+        .section-title .btn-manage:hover { background: #1a5bb5; }
+
+        .field { margin-bottom: 14px; }
+        .field:last-child { margin-bottom: 0; }
         .field label {
             display: block;
             font-size: 13px;
@@ -65,10 +68,7 @@
             color: #1a2332;
             margin-bottom: 4px;
         }
-        .field label .required {
-            color: #e53e3e;
-            margin-left: 2px;
-        }
+        .field label .required { color: #e53e3e; margin-left: 2px; }
         .field input,
         .field select,
         .field textarea {
@@ -108,10 +108,6 @@
             box-shadow: 0 0 0 3px rgba(43, 110, 240, 0.12);
             background: #ffffff;
         }
-        .field textarea {
-            min-height: 64px;
-            resize: vertical;
-        }
         .field .hint {
             font-size: 12px;
             color: #8a9aa8;
@@ -121,6 +117,7 @@
             color: #2b6ef0;
             text-decoration: none;
         }
+
         .avatar-zone {
             display: flex;
             align-items: center;
@@ -152,12 +149,8 @@
             text-align: center;
             user-select: none;
         }
-        .avatar-zone .file-btn:active {
-            background: #dce0e6;
-        }
-        .avatar-zone .file-input-wrap {
-            display: none;
-        }
+        .avatar-zone .file-btn:active { background: #dce0e6; }
+        .avatar-zone .file-input-wrap { display: none; }
         .avatar-zone .file-name {
             font-size: 12px;
             color: #8a9aa8;
@@ -182,9 +175,7 @@
             white-space: nowrap;
             margin-left: auto;
         }
-        .avatar-zone .upload-btn:active {
-            background: #dce0e6;
-        }
+        .avatar-zone .upload-btn:active { background: #dce0e6; }
         .avatar-zone .upload-status {
             font-size: 11px;
             color: #8a9aa8;
@@ -194,15 +185,10 @@
             flex: 0 0 auto;
             padding-left: 4px;
         }
-        .avatar-zone .upload-status.success {
-            color: #0d6832;
-        }
-        .avatar-zone .upload-status.error {
-            color: #b33636;
-        }
-        .avatar-zone .upload-status.loading {
-            color: #2b6ef0;
-        }
+        .avatar-zone .upload-status.success { color: #0d6832; }
+        .avatar-zone .upload-status.error { color: #b33636; }
+        .avatar-zone .upload-status.loading { color: #2b6ef0; }
+
         .progress-container {
             width: 100%;
             height: 4px;
@@ -212,9 +198,7 @@
             overflow: hidden;
             display: none;
         }
-        .progress-container.active {
-            display: block;
-        }
+        .progress-container.active { display: block; }
         .progress-bar {
             height: 100%;
             width: 0%;
@@ -230,6 +214,7 @@
             50% { width: 70%; }
             100% { width: 100%; }
         }
+
         .avatar-preview-wrap {
             display: flex;
             align-items: center;
@@ -257,8 +242,9 @@
         }
         .avatar-preview-wrap input[type="url"]:focus {
             border-color: #2b6ef0;
-            box-shadow: 0 0 0 3px rgba(43, 110, 240, 0.10);
+            box-shadow: 0 0 0 3px rgba(43,110,240,0.10);
         }
+
         .btn-primary {
             width: 100%;
             padding: 14px;
@@ -280,6 +266,7 @@
             opacity: 0.5;
             pointer-events: none;
         }
+
         .btn-save {
             padding: 8px 16px;
             font-size: 14px;
@@ -292,9 +279,8 @@
             transition: background 0.2s;
             white-space: nowrap;
         }
-        .btn-save:active {
-            background: #dce0e6;
-        }
+        .btn-save:active { background: #dce0e6; }
+
         .btn-view {
             width: 100%;
             padding: 14px;
@@ -311,6 +297,7 @@
             opacity: 0.8;
             transform: scale(0.98);
         }
+
         .status {
             margin-top: 12px;
             padding: 10px 14px;
@@ -338,6 +325,7 @@
             color: #1a5bb5;
             border: 1px solid #c5d9f5;
         }
+
         .settings-status {
             display: inline-block;
             padding: 6px 14px;
@@ -351,23 +339,16 @@
             user-select: none;
             transition: background 0.2s;
         }
-        .settings-status.ok {
-            background: #d4edda;
-            color: #0d6832;
-        }
-        .settings-status.warn {
-            background: #fff3cd;
-            color: #856404;
-        }
+        .settings-status.ok { background: #d4edda; color: #0d6832; }
+        .settings-status.warn { background: #fff3cd; color: #856404; }
+
         .loader {
             display: none;
             flex-direction: column;
             align-items: center;
             padding: 16px 0 8px;
         }
-        .loader.active {
-            display: flex;
-        }
+        .loader.active { display: flex; }
         .spinner {
             width: 36px;
             height: 36px;
@@ -378,23 +359,15 @@
             margin-bottom: 10px;
         }
         @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
-        .loader-text {
-            font-size: 15px;
-            font-weight: 500;
-            color: #1a2332;
-        }
-        .loader-sub {
-            font-size: 13px;
-            color: #6b7a8f;
-            margin-top: 2px;
-        }
+        .loader-text { font-size: 15px; font-weight: 500; color: #1a2332; }
+        .loader-sub { font-size: 13px; color: #6b7a8f; margin-top: 2px; }
+
         .view-area {
             display: none;
             margin-top: 12px;
         }
-        .view-area.active {
-            display: block;
-        }
+        .view-area.active { display: block; }
+
         .footer-note {
             text-align: center;
             font-size: 12px;
@@ -402,14 +375,13 @@
             margin-top: 20px;
             padding-bottom: 10px;
         }
+
         .settings-grid {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
-        .settings-grid .field {
-            margin-bottom: 0;
-        }
+        .settings-grid .field { margin-bottom: 0; }
         .settings-actions {
             display: flex;
             gap: 10px;
@@ -427,7 +399,12 @@
     </div>
 
     <div class="section">
-        <div class="section-title">⚙️ 系统配置 <span class="badge">仅保存在本机</span></div>
+        <!-- ===== 系统配置标题 + 管理入口（同一行） ===== -->
+        <div class="section-title">
+            <span>⚙️ 系统配置 <span class="badge">仅保存在本机</span></span>
+            <a href="manage.html" class="btn-manage">📋 管理数据</a>
+        </div>
+
         <div class="settings-grid">
             <div class="field">
                 <label>GitHub 仓库路径</label>
@@ -476,7 +453,6 @@
             <input type="text" id="idNumberInput" placeholder="请输入身份证号码">
         </div>
 
-        <!-- ===== 新增：体检单位 ===== -->
         <div class="field">
             <label>体检单位 <span class="required">*</span></label>
             <input type="text" id="hospitalInput" placeholder="例如：广州东仁医院" value="广州东仁医院">
@@ -577,7 +553,7 @@
         const nameInput = document.getElementById('nameInput');
         const genderInput = document.getElementById('genderInput');
         const idNumberInput = document.getElementById('idNumberInput');
-        const hospitalInput = document.getElementById('hospitalInput');  // 新增
+        const hospitalInput = document.getElementById('hospitalInput');
         const dateInput = document.getElementById('dateInput');
         const duan1Input = document.getElementById('duan1Input');
         const duan2Input = document.getElementById('duan2Input');
@@ -792,6 +768,7 @@
                         statusDiv.textContent = '健康证已生成！';
                         statusDiv.className = 'status success';
                         statusDiv.style.display = 'block';
+                        // 清空表单（保留配置）
                         titleInput.value = '广东省食品从业人员健康证明';
                         nameInput.value = '';
                         genderInput.value = '男';

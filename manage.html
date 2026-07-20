@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康证 · 数据管理（内置编辑）</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #f2f4f8;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Roboto, Arial, sans-serif;
+            padding: 20px;
+            color: #1a2332;
+        }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+        .header h1 { font-size: 22px; }
+        .header .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #e1e4e8;
+            color: #24292f;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary { background: #1a2332; color: #fff; }
+        .btn-primary:hover { background: #2d3a4f; }
+        .btn-success { background: #1f883d; color: #fff; }
+        .btn-success:hover { background: #1a7a34; }
+        .btn-danger { background: #cf222e; color: #fff; }
+        .btn-danger:hover { background: #b11f2b; }
+        .btn-outline { background: transparent; border: 1px solid #d0d7de; }
+        .btn-outline:hover { background: #f6f8fa; }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+
+        .search-bar {
+            position: sticky; top: 0; z-index: 10; background: #fff;
+            padding: 12px 0; margin-bottom: 16px; border-bottom: 2px solid #f0f2f5;
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        .search-bar input { flex: 1; min-width: 200px; padding: 10px 14px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 15px; outline: none; }
+        .search-bar input:focus { border-color: #1a2332; box-shadow: 0 0 0 3px rgba(26,35,50,0.12); }
+        .search-bar .badge { font-size: 13px; color: #6b7a8f; }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { text-align: left; padding: 12px 10px; border-bottom: 2px solid #e1e4e8; background: #f6f8fa; font-weight: 600; }
+        td { padding: 12px 10px; border-bottom: 1px solid #e1e4e8; vertical-align: middle; }
+        tr:hover td { background: #f9fafb; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e1e4e8; }
+        .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
+
+        .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
+
+        /* Toast */
+        .toast { position: fixed; top: 20px; right: 20px; background: #1f883d; color: #fff; padding: 12px 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-20px); transition: 0.3s; z-index: 999; font-weight: 500; }
+        .toast.error { background: #cf222e; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: #fff; border-radius: 16px; max-width: 600px; width: 100%;
+            max-height: 90vh; overflow-y: auto; padding: 28px 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .modal-box .close-btn {
+            position: absolute; right: 16px; top: 16px;
+            background: none; border: none; font-size: 24px; cursor: pointer; color: #8b949e;
+        }
+        .modal-box .close-btn:hover { color: #1a2332; }
+        .modal-box h2 { margin-bottom: 20px; font-size: 20px; }
+        .modal-box .field { margin-bottom: 14px; }
+        .modal-box .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+        .modal-box .field input, .modal-box .field select {
+            width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #dce0e6; border-radius: 10px;
+            background: #f8fafc; outline: none;
+        }
+        .modal-box .field input:focus, .modal-box .field select:focus {
+            border-color: #2b6ef0; box-shadow: 0 0 0 3px rgba(43,110,240,0.1);
+        }
+        .modal-box .avatar-zone {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            background: #f8fafc; border: 1px dashed #d0d6de; border-radius: 12px; padding: 8px 12px;
+        }
+        .modal-box .avatar-zone .file-btn { padding: 4px 14px; background: #eef2f7; border-radius: 6px; cursor: pointer; font-size: 13px; border: 1px solid #dce0e6; }
+        .modal-box .avatar-zone .upload-btn { padding: 4px 18px; background: #eef2f7; border-radius: 6px; cursor: pointer; font-size: 13px; border: none; }
+        .modal-box .avatar-zone .status { font-size: 12px; color: #6b7a8f; }
+        .modal-box .avatar-preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .modal-box .avatar-preview img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #e1e4e8; display: none; }
+        .modal-box .avatar-preview input { flex: 1; min-width: 140px; }
+
+        .modal-box .btn-submit-modal { width: 100%; padding: 14px; font-size: 17px; font-weight: 600; background: #1a2332; color: #fff; border: none; border-radius: 40px; cursor: pointer; margin-top: 10px; }
+        .modal-box .btn-submit-modal:disabled { opacity: 0.5; }
+
+        .loading-spinner { text-align: center; padding: 20px; }
+        .spinner { width: 36px; height: 36px; border: 3px solid #e8ecf2; border-top: 3px solid #1a2332; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📋 数据管理</h1>
+        <div class="actions">
+            <button class="btn btn-outline" id="refreshBtn">🔄 刷新</button>
+            <button class="btn btn-success" id="addBtn">➕ 新增</button>
+        </div>
+    </div>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 搜索姓名...">
+        <span class="badge" id="countDisplay">共 0 条</span>
+    </div>
+
+    <div id="loadingArea" class="loading-spinner" style="display:none;"><div class="spinner"></div><div>加载中...</div></div>
+
+    <div class="table-wrap" id="tableWrap">
+        <table>
+            <thead><tr><th style="width:30px;"><input type="checkbox" id="selectAll"></th><th style="width:50px;">头像</th><th>姓名</th><th>身份证号</th><th style="width:160px;">操作</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <div id="noData" class="no-data" style="display:none;">暂无数据</div>
+    </div>
+
+    <div class="batch-bar" id="batchBar">
+        <span>已选 <span id="selectedCount">0</span> 项</span>
+        <button class="btn btn-danger" id="batchDeleteBtn">🗑️ 批量删除</button>
+    </div>
+</div>
+
+<!-- ========== 模态框 ========== -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+        <button class="close-btn" id="modalCloseBtn">&times;</button>
+        <h2 id="modalTitle">新增数据</h2>
+        <form id="modalForm">
+            <!-- 隐藏字段：编辑时的 Issue Number -->
+            <input type="hidden" id="editIssueNumber" value="">
+
+            <div class="field"><label>标题</label><input type="text" id="f_title" value="广东省食品从业人员健康证明"></div>
+            <div class="field"><label>姓名 *</label><input type="text" id="f_name" placeholder="请输入姓名"></div>
+            <div class="field"><label>性别</label>
+                <select id="f_gender"><option value="男">男</option><option value="女">女</option></select>
+            </div>
+            <div class="field"><label>身份证号 *</label><input type="text" id="f_idNumber" placeholder="请输入身份证号码"></div>
+            <div class="field"><label>体检单位</label><input type="text" id="f_hospital" value="广州东仁医院"></div>
+            <div class="field"><label>体检日期</label><input type="date" id="f_date"></div>
+            <div class="field"><label>一段（中间第一行）</label><input type="text" id="f_duan1" value="广东省食品从业人员"></div>
+            <div class="field"><label>二段（中间第二行）</label><input type="text" id="f_duan2" value="健康证明"></div>
+            <div class="field"><label>A版防伪字段</label><input type="text" id="f_afangwei" value="防伪标识二维码"></div>
+            <div class="field"><label>B版健康信息</label><input type="text" id="f_bhealth" value="此健康信息已上报平台"></div>
+            <div class="field"><label>A版第三卡片</label>
+                <select id="f_aCard3"><option value="0">显示</option><option value="1">隐藏</option></select>
+            </div>
+            <div class="field"><label>B版第三卡片</label>
+                <select id="f_bCard3"><option value="0">显示</option><option value="1">隐藏</option></select>
+            </div>
+
+            <div class="field">
+                <label>头像照片</label>
+                <div class="avatar-zone">
+                    <span class="file-btn" id="modalFileBtn">选择文件</span>
+                    <input type="file" id="modalAvatarFile" accept="image/*" style="display:none;">
+                    <span id="modalFileName">未选择</span>
+                    <button type="button" class="upload-btn" id="modalUploadBtn">上传</button>
+                    <span class="status" id="modalUploadStatus"></span>
+                </div>
+                <div class="avatar-preview">
+                    <img id="modalAvatarPreview" alt="预览">
+                    <input type="url" id="f_avatar" placeholder="或手动粘贴图片链接">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit-modal" id="modalSubmitBtn">提交</button>
+        </form>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function() {
+    const REPO_KEY = 'github_issue_upload_repo';
+    const TOKEN_KEY = 'github_issue_upload_token';
+    const IMGBB_KEY = 'github_issue_upload_imgbb';
+
+    function getRepo() { return localStorage.getItem(REPO_KEY) || ''; }
+    function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+    function getImgbbKey() { return localStorage.getItem(IMGBB_KEY) || ''; }
+
+    // DOM
+    const tbody = document.getElementById('tableBody');
+    const noData = document.getElementById('noData');
+    const searchInput = document.getElementById('searchInput');
+    const countDisplay = document.getElementById('countDisplay');
+    const selectAll = document.getElementById('selectAll');
+    const selectedCount = document.getElementById('selectedCount');
+    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const addBtn = document.getElementById('addBtn');
+    const loadingArea = document.getElementById('loadingArea');
+
+    // Modal
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalForm = document.getElementById('modalForm');
+    const editIssueNumber = document.getElementById('editIssueNumber');
+    const modalSubmitBtn = document.getElementById('modalSubmitBtn');
+
+    // 表单字段
+    const f_title = document.getElementById('f_title');
+    const f_name = document.getElementById('f_name');
+    const f_gender = document.getElementById('f_gender');
+    const f_idNumber = document.getElementById('f_idNumber');
+    const f_hospital = document.getElementById('f_hospital');
+    const f_date = document.getElementById('f_date');
+    const f_duan1 = document.getElementById('f_duan1');
+    const f_duan2 = document.getElementById('f_duan2');
+    const f_afangwei = document.getElementById('f_afangwei');
+    const f_bhealth = document.getElementById('f_bhealth');
+    const f_aCard3 = document.getElementById('f_aCard3');
+    const f_bCard3 = document.getElementById('f_bCard3');
+    const f_avatar = document.getElementById('f_avatar');
+
+    const modalFileBtn = document.getElementById('modalFileBtn');
+    const modalAvatarFile = document.getElementById('modalAvatarFile');
+    const modalFileName = document.getElementById('modalFileName');
+    const modalUploadBtn = document.getElementById('modalUploadBtn');
+    const modalUploadStatus = document.getElementById('modalUploadStatus');
+    const modalAvatarPreview = document.getElementById('modalAvatarPreview');
+
+    // State
+    let allIssues = []; // open issues
+    let filteredIssues = [];
+    let selectedIds = new Set();
+
+    // ---- Toast ----
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast' + (isError ? ' error' : '');
+        toast.classList.add('show');
+        clearTimeout(window._toastTimer);
+        window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ---- Parse Issue ----
+    function parseIssue(issue) {
+        const body = issue.body || '';
+        const get = (key) => {
+            const match = body.match(new RegExp(key + '[：:]\\s*(.+)'));
+            return match ? match[1].trim() : '';
+        };
+        const avatarMatch = body.match(/头像图片[：:]\s*(https?:\/\/[^\s]+)/);
+        return {
+            id: issue.id,
+            number: issue.number,
+            name: issue.title,
+            idCard: get('身份证'),
+            avatar: avatarMatch ? avatarMatch[1] : '',
+            raw: {
+                titleVal: get('标题') || '广东省食品从业人员健康证明',
+                gender: get('性别') || '男',
+                hospital: get('体检单位') || '广州东仁医院',
+                date: get('体检日期') || '',
+                duan1: get('一段') || '广东省食品从业人员',
+                duan2: get('二段') || '健康证明',
+                afangwei: get('A版防伪字段') || '防伪标识二维码',
+                bhealth: get('B版健康信息') || '此健康信息已上报平台',
+                aCard3: get('A版三卡显示') || '0',
+                bCard3: get('B版三卡显示') || '0',
+                avatar: avatarMatch ? avatarMatch[1] : ''
+            }
+        };
+    }
+
+    // ---- Render ----
+    function render() {
+        const data = filteredIssues;
+        countDisplay.textContent = `共 ${data.length} 条`;
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '';
+            noData.style.display = 'block';
+            document.getElementById('batchBar').style.display = 'none';
+            updateSelectedCount();
+            return;
+        }
+        noData.style.display = 'none';
+        document.getElementById('batchBar').style.display = 'flex';
+
+        let html = '';
+        data.forEach(issue => {
+            const p = parseIssue(issue);
+            const checked = selectedIds.has(issue.id) ? 'checked' : '';
+            const avatarSrc = p.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22 fill=%22%23e1e4e8%22%3E%3Crect width=%2240%22 height=%2240%22/%3E%3C/svg%3E';
+            html += `
+                <tr>
+                    <td><input type="checkbox" class="row-cb" data-id="${issue.id}" ${checked}></td>
+                    <td><img class="avatar" src="${avatarSrc}" alt="头像"></td>
+                    <td><strong>${escapeHtml(p.name)}</strong></td>
+                    <td>${escapeHtml(p.idCard)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm edit-btn" data-id="${issue.id}">编辑</button>
+                        <button class="btn btn-danger btn-sm delete-btn" data-id="${issue.id}">删除</button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+        updateSelectedCount();
+        updateSelectAllState();
+        bindEvents();
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ---- Events binding ----
+    function bindEvents() {
+        document.querySelectorAll('.row-cb').forEach(cb => {
+            cb.onchange = function() {
+                const id = parseInt(this.dataset.id);
+                if (this.checked) selectedIds.add(id);
+                else selectedIds.delete(id);
+                updateSelectedCount();
+                updateSelectAllState();
+            };
+        });
+
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.onclick = function() { openEditModal(parseInt(this.dataset.id)); };
+        });
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.onclick = function() { deleteIssue(parseInt(this.dataset.id)); };
+        });
+    }
+
+    function updateSelectedCount() {
+        selectedCount.textContent = selectedIds.size;
+    }
+    function updateSelectAllState() {
+        const total = filteredIssues.length;
+        if (total === 0) { selectAll.checked = false; selectAll.indeterminate = false; return; }
+        const checked = filteredIssues.filter(i => selectedIds.has(i.id)).length;
+        selectAll.checked = checked === total;
+        selectAll.indeterminate = checked > 0 && checked < total;
+    }
+
+    // ---- Load Issues ----
+    async function loadIssues() {
+        const repo = getRepo();
+        const token = getToken();
+        if (!repo || !token) {
+            showToast('⚠️ 请先在「系统配置」中保存仓库和 Token', true);
+            return;
+        }
+        loadingArea.style.display = 'block';
+        document.getElementById('tableWrap').style.display = 'none';
+        try {
+            const url = `https://api.github.com/repos/${repo}/issues?state=open&per_page=100`;
+            const res = await fetch(url, { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' } });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            allIssues = data.filter(issue => !issue.pull_request);
+            filteredIssues = [...allIssues];
+            selectedIds.clear();
+            render();
+            showToast(`加载成功，共 ${allIssues.length} 条`, false);
+        } catch (err) {
+            showToast('加载失败：' + err.message, true);
+        } finally {
+            loadingArea.style.display = 'none';
+            document.getElementById('tableWrap').style.display = 'block';
+        }
+    }
+
+    // ---- Filter ----
+    searchInput.oninput = function() {
+        const keyword = this.value.trim().toLowerCase();
+        if (!keyword) filteredIssues = [...allIssues];
+        else filteredIssues = allIssues.filter(i => i.title.toLowerCase().includes(keyword));
+        selectedIds.clear();
+        render();
+    };
+
+    // ---- Select All ----
+    selectAll.onchange = function() {
+        if (this.checked) {
+            filteredIssues.forEach(i => selectedIds.add(i.id));
+        } else {
+            filteredIssues.forEach(i => selectedIds.delete(i.id));
+        }
+        render();
+    };
+
+    // ---- Add / Edit Modal ----
+    function openAddModal() {
+        editIssueNumber.value = '';
+        modalTitle.textContent = '新增数据';
+        modalSubmitBtn.textContent = '提交 Issue';
+        clearForm();
+        modalOverlay.classList.add('active');
+    }
+
+    function openEditModal(id) {
+        const issue = allIssues.find(i => i.id === id);
+        if (!issue) return;
+        const p = parseIssue(issue);
+        editIssueNumber.value = issue.number;
+        modalTitle.textContent = '编辑数据';
+        modalSubmitBtn.textContent = '更新 Issue';
+
+        f_title.value = p.raw.titleVal;
+        f_name.value = p.name;
+        f_gender.value = p.raw.gender;
+        f_idNumber.value = p.idCard;
+        f_hospital.value = p.raw.hospital;
+        f_date.value = p.raw.date;
+        f_duan1.value = p.raw.duan1;
+        f_duan2.value = p.raw.duan2;
+        f_afangwei.value = p.raw.afangwei;
+        f_bhealth.value = p.raw.bhealth;
+        f_aCard3.value = p.raw.aCard3;
+        f_bCard3.value = p.raw.bCard3;
+        f_avatar.value = p.raw.avatar || '';
+        if (p.raw.avatar) {
+            modalAvatarPreview.src = p.raw.avatar;
+            modalAvatarPreview.style.display = 'block';
+        } else {
+            modalAvatarPreview.style.display = 'none';
+        }
+        modalOverlay.classList.add('active');
+    }
+
+    function clearForm() {
+        f_title.value = '广东省食品从业人员健康证明';
+        f_name.value = '';
+        f_gender.value = '男';
+        f_idNumber.value = '';
+        f_hospital.value = '广州东仁医院';
+        f_date.value = '';
+        f_duan1.value = '广东省食品从业人员';
+        f_duan2.value = '健康证明';
+        f_afangwei.value = '防伪标识二维码';
+        f_bhealth.value = '此健康信息已上报平台';
+        f_aCard3.value = '0';
+        f_bCard3.value = '0';
+        f_avatar.value = '';
+        modalAvatarPreview.style.display = 'none';
+        modalAvatarPreview.src = '';
+        modalAvatarFile.value = '';
+        modalFileName.textContent = '未选择';
+        modalUploadStatus.textContent = '';
+        document.getElementById('editIssueNumber').value = '';
+    }
+
+    // ---- Modal Submit ----
+    modalForm.onsubmit = async function(e) {
+        e.preventDefault();
+        const repo = getRepo();
+        const token = getToken();
+        if (!repo || !token) { showToast('请先配置仓库和 Token', true); return; }
+
+        const name = f_name.value.trim();
+        const idNumber = f_idNumber.value.trim();
+        if (!name || !idNumber) { showToast('姓名和身份证号不能为空', true); return; }
+
+        const issueNumber = editIssueNumber.value;
+        const title = name;
+        const body = buildBody();
+
+        modalSubmitBtn.disabled = true;
+        modalSubmitBtn.textContent = '提交中...';
+
+        try {
+            if (issueNumber) {
+                // 编辑
+                const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}`;
+                const res = await fetch(url, {
+                    method: 'PATCH',
+                    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, body })
+                });
+                if (!res.ok) throw new Error(`更新失败 (${res.status})`);
+                showToast('更新成功！', false);
+            } else {
+                // 新增
+                const url = `https://api.github.com/repos/${repo}/issues`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, body })
+                });
+                if (!res.ok) throw new Error(`创建失败 (${res.status})`);
+                showToast('创建成功！', false);
+            }
+            modalOverlay.classList.remove('active');
+            await loadIssues();
+        } catch (err) {
+            showToast('操作失败：' + err.message, true);
+        } finally {
+            modalSubmitBtn.disabled = false;
+            modalSubmitBtn.textContent = issueNumber ? '更新 Issue' : '提交 Issue';
+        }
+    };
+
+    function buildBody() {
+        let b = `标题：${f_title.value.trim()}\n`;
+        b += `姓名：${f_name.value.trim()}\n`;
+        b += `性别：${f_gender.value}\n`;
+        b += `身份证：${f_idNumber.value.trim()}\n`;
+        b += `体检单位：${f_hospital.value.trim()}\n`;
+        b += `体检日期：${f_date.value}\n`;
+        b += `一段：${f_duan1.value.trim()}\n`;
+        b += `二段：${f_duan2.value.trim()}\n`;
+        b += `A版防伪字段：${f_afangwei.value.trim()}\n`;
+        b += `B版健康信息：${f_bhealth.value.trim()}\n`;
+        b += `A版三卡显示：${f_aCard3.value}\n`;
+        b += `B版三卡显示：${f_bCard3.value}\n`;
+        if (f_avatar.value.trim()) b += `头像图片：${f_avatar.value.trim()}\n`;
+        b += `提交于：${new Date().toLocaleString('zh-CN')}`;
+        return b;
+    }
+
+    // ---- Delete ----
+    async function deleteIssue(id) {
+        const issue = allIssues.find(i => i.id === id);
+        if (!issue) return;
+        if (!confirm(`确定要删除「${issue.title}」吗？`)) return;
+        const repo = getRepo();
+        const token = getToken();
+        try {
+            const url = `https://api.github.com/repos/${repo}/issues/${issue.number}`;
+            const res = await fetch(url, {
+                method: 'PATCH',
+                headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state: 'closed' })
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            showToast('已删除', false);
+            await loadIssues();
+        } catch (err) {
+            showToast('删除失败：' + err.message, true);
+        }
+    }
+
+    // ---- Batch Delete ----
+    batchDeleteBtn.onclick = async function() {
+        if (selectedIds.size === 0) return alert('请先选择要删除的数据');
+        if (!confirm(`确定要删除选中的 ${selectedIds.size} 条数据吗？`)) return;
+        const repo = getRepo();
+        const token = getToken();
+        const toDelete = allIssues.filter(i => selectedIds.has(i.id));
+        try {
+            for (const issue of toDelete) {
+                const url = `https://api.github.com/repos/${repo}/issues/${issue.number}`;
+                await fetch(url, {
+                    method: 'PATCH',
+                    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state: 'closed' })
+                });
+            }
+            showToast(`已删除 ${toDelete.length} 条`, false);
+            await loadIssues();
+        } catch (err) {
+            showToast('批量删除失败：' + err.message, true);
+        }
+    };
+
+    // ---- Modal Avatar Upload (Imgbb) ----
+    modalFileBtn.onclick = () => modalAvatarFile.click();
+    modalAvatarFile.onchange = function() {
+        if (this.files && this.files.length > 0) modalFileName.textContent = this.files[0].name;
+        else modalFileName.textContent = '未选择';
+    };
+
+    modalUploadBtn.onclick = async function() {
+        const file = modalAvatarFile.files[0];
+        if (!file) { modalUploadStatus.textContent = '请选择文件'; modalUploadStatus.style.color = '#b33636'; return; }
+        const imgbbKey = getImgbbKey();
+        if (!imgbbKey) { modalUploadStatus.textContent = '请先保存 Imgbb Key'; modalUploadStatus.style.color = '#b33636'; return; }
+
+        modalUploadStatus.textContent = '上传中...';
+        modalUploadStatus.style.color = '#2b6ef0';
+        const formData = new FormData();
+        formData.append('key', imgbbKey);
+        formData.append('image', file);
+        try {
+            const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                const url = data.data.url;
+                f_avatar.value = url;
+                modalAvatarPreview.src = url;
+                modalAvatarPreview.style.display = 'block';
+                modalUploadStatus.textContent = '成功！';
+                modalUploadStatus.style.color = '#0d6832';
+            } else {
+                throw new Error(data.error?.message || '失败');
+            }
+        } catch (err) {
+            modalUploadStatus.textContent = '❌ ' + err.message;
+            modalUploadStatus.style.color = '#b33636';
+        }
+    };
+
+    f_avatar.oninput = function() {
+        if (this.value.trim()) {
+            modalAvatarPreview.src = this.value.trim();
+            modalAvatarPreview.style.display = 'block';
+        } else {
+            modalAvatarPreview.style.display = 'none';
+        }
+    };
+
+    // ---- Modal Close ----
+    function closeModal() {
+        modalOverlay.classList.remove('active');
+    }
+    modalCloseBtn.onclick = closeModal;
+    modalOverlay.onclick = function(e) { if (e.target === this) closeModal(); };
+
+    // ---- Refresh & Add ----
+    refreshBtn.onclick = loadIssues;
+    addBtn.onclick = openAddModal;
+
+    // ---- Init ----
+    if (!getRepo() || !getToken()) {
+        showToast('⚠️ 请先在「系统配置」中保存仓库路径和 Token', true);
+    }
+    loadIssues();
+
+    // 给日期框默认今天
+    const today = new Date().toISOString().split('T')[0];
+    if (f_date) f_date.value = today;
+
+})();
+</script>
+</body>
+</html>
