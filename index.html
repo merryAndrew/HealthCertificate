@@ -8,7 +8,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: "Microsoft Yahei", sans-serif; background-color: #e9e9e9; padding: 10px; }
-        .cert-wrapper { max-width: 450px; margin: 0 auto 20px auto; position: relative; padding-bottom: 60px; }
+        .cert-wrapper { max-width: 450px; margin: 0 auto 20px auto; position: relative; padding-bottom: 70px; }
         .cert-module { background: #f8f8f8; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.35); width: 100%; height: 180px; }
         .top-card { font-size: 11px; display: flex; flex-direction: column; height: 100%; margin-top: 5px; }
         .top-title { text-align: center; font-size: 16px; color: #333; margin-top: 5px; margin-bottom: 10px; font-weight: bold; }
@@ -63,9 +63,9 @@
             align-items: center;
             gap: 10px;
         }
-        .admin-bar input {
+        .admin-bar input[type="text"] {
             flex: 1;
-            min-width: 150px;
+            min-width: 120px;
             padding: 8px 12px;
             border: 1px solid #dce0e6;
             border-radius: 8px;
@@ -88,35 +88,20 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-        .admin-bar .btn-primary {
-            background: #2b6ef0;
-            color: #fff;
-            border: none;
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-        .admin-bar .btn-success {
-            background: #2f9e44;
-            color: #fff;
-            border: none;
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-        .checkbox-container {
+        .admin-bar .checkbox-container {
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 13px;
-            color: #333;
         }
-        .checkbox-container input[type="checkbox"] {
+        .admin-bar .checkbox-container input[type="checkbox"] {
             width: 16px;
             height: 16px;
             cursor: pointer;
+        }
+        .admin-bar .badge {
+            font-size: 12px;
+            color: #666;
         }
         .card-checkbox {
             position: absolute;
@@ -129,34 +114,18 @@
             height: 18px;
             cursor: pointer;
         }
-        .edit-btn, .save-btn, .delete-btn, .cancel-btn {
+        .button-group button {
             border: none;
             border-radius: 20px;
             padding: 6px 16px;
             font-size: 13px;
             cursor: pointer;
         }
-        .edit-btn { background: #2b6ef0; color: #fff; }
-        .save-btn { background: #2f9e44; color: #fff; }
-        .delete-btn { background: #e53e3e; color: #fff; }
-        .cancel-btn { background: #6c757d; color: #fff; }
-        .button-group {
-            position: absolute;
-            bottom: 10px;
-            left: 12px;
-            right: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 30;
-        }
-        .button-group.hidden { display: none; }
         .edit-status {
             position: absolute;
             bottom: 50px;
             right: 12px;
             font-size: 12px;
-            color: #2b6ef0;
             z-index: 20;
             display: none;
         }
@@ -166,7 +135,7 @@
 </head>
 <body>
     <div id="app">
-        <!-- 管理员栏（超级管理员） -->
+        <!-- 管理员栏（仅管理员可见） -->
         <div id="adminBar" style="display: none;" class="admin-bar">
             <input type="text" id="searchInput" placeholder="🔍 搜索姓名..." />
             <div class="checkbox-container">
@@ -174,13 +143,18 @@
                 <label for="selectAll">全选</label>
             </div>
             <button class="btn-danger" id="batchDeleteBtn">删除选中</button>
-            <span id="batchStatus" style="font-size: 12px; color: #666;"></span>
+            <span class="badge" id="batchStatus"></span>
         </div>
         
         <!-- 卡片列表 -->
         <div id="cardsContainer">
             
-        <div class="cert-wrapper" data-title="广东省食品从业人员健康证明" data-issue-number="17" style="position: relative; padding-bottom: 60px;">
+        <div class="cert-wrapper" data-title="广东省食品从业人员健康证明" data-issue-number="17" style="position: relative; padding-bottom: 70px;">
+            <!-- 复选框（管理员可见） -->
+            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
+                <input type="checkbox" class="card-select" data-issue="17" data-title="广东省食品从业人员健康证明" />
+            </div>
+
             <div class="cert-module top-card">
                 <div class="top-title" id="title_17">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -206,7 +180,7 @@
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content" id="hospital_17">广州东仁医院</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
@@ -228,12 +202,25 @@
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,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" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
+                    <div class="qrcode-title" id="bottomText_17">此健康信息已上报平台</div>
                 </div>
             </div>
+
+            <!-- 按钮组 -->
+            <div class="button-group" id="buttonGroup_17" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
+                <button class="edit-btn" id="editBtn_17" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
+                <button class="save-btn" id="saveBtn_17" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
+                <button class="cancel-btn" id="cancelBtn_17" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+            </div>
+            <div class="edit-status" id="editStatus_17" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
         </div>
         
-        <div class="cert-wrapper" data-title="ppp" data-issue-number="15" style="position: relative; padding-bottom: 60px;">
+        <div class="cert-wrapper" data-title="ppp" data-issue-number="15" style="position: relative; padding-bottom: 70px;">
+            <!-- 复选框（管理员可见） -->
+            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
+                <input type="checkbox" class="card-select" data-issue="15" data-title="ppp" />
+            </div>
+
             <div class="cert-module top-card">
                 <div class="top-title" id="title_15">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -259,7 +246,7 @@
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content" id="hospital_15">广州东仁医院</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
@@ -281,12 +268,25 @@
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADn0lEQVR4nO2cXY6jOhBGT42R+tGRegFZirODu6TRLGl2AEvpBYwEj5FAdR9sg6G778PcjpK0vnpACXAElj6V68fGnL+z4cdfgiBSpEiRIkWKFPl4pBXrYDgtxmAdDNZhZh12mTpgqndd7vy2Ih+STO7uPgJMHRCvRvKreQ94z2JAcHd335P3eFuRD0lOxb/YBSC9vbhdpo5yLs7ll1n3dc8U+T3I7v2pMAOL+XCeO2d6xQcLDtNXPVPkdyfjDMMpuP0cwS7xakB1UDd6pshnJqsfik71NEvnaTwZTK9u+cBizgRtQfK5xiny5uRgZmYnaihEaOWSxuB2Yclp2Vc9U+Q3IbMfagQznK/mwykAccZhrlfivi3yXOMUeTuSnK6nEcjZ+xg8Z/Q+bs4o1My/JvjeP9c4Rd6OpCgC8D4WNWW9JHf3PhbNkHzG+zgjDYncWykbxhnvs5OZOSgn52rkc3MV13ONU+TtyNUPbUXo+iuNwavjmZubpSGRH5LxWvplxGvul/mv8wxpBDN7yTKzy6S8TOTRyqQ1koOdbGkLp+NcAyWvoZDiIZE726anMnltpaHong/JtwRf8ZDIozUxdQl7QnVLWU3bX2ickTQk8kBOL25mHe5+NbNTcPtZk/lcwIbg+b7L3d9W5COR1avEmm+V0lBJ9XNklHauSn5I5N6qhmZKdXotCJVqYyh1xzy1KR4SebTcLzNicCOOGAS31C84Exg1VzNYjNTjdr+3FfmI5Nov+yh0nmnaZ02ILT8ksrWal3nb5lg7Z0VNI+Rb1iaINCRytVpj3IU9ayhUD9B0zhQPidzZoT60RdclTfO1RD1ShCQNidxZFcpMk8c3MxjbopBQ4yZpSGRrxQ8R2vrQNmWtgbX6ZSI/syYv6/OZUELsvv4q9421eqS5TOSH5GJbOZr01lF6HVNHWSkb3WvX4+5vK/KByLVvX1eZ9Ww16Zqwrc6Ibc6THxJZzfdWBFLribv1Q1sdSRoS2ViNqQHW9dRlSZq3zijVEpL8kMiPyDUls0s+ERwms3IAyibqs9fY+ynHKfIGZLu/rKyALXl83Qy0igaQHxL53t599yP9foXh9AdnenVLb7bugg2zlcP/e6bI70W+09BwvprDgqX+as5UROPDPyPOtGhfh8i9Hb/7keVD/JO9j0GA1C+dEcFS78gPidzbIS9rL9V90Rw+o6d4SGRrx+9+7L/t4f9x9bnGKVKkSJEiRYoU+Zn9C/OoaWUgY3NMAAAAAElFTkSuQmCC" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
+                    <div class="qrcode-title" id="bottomText_15">此健康信息已上报平台</div>
                 </div>
             </div>
+
+            <!-- 按钮组 -->
+            <div class="button-group" id="buttonGroup_15" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
+                <button class="edit-btn" id="editBtn_15" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
+                <button class="save-btn" id="saveBtn_15" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
+                <button class="cancel-btn" id="cancelBtn_15" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+            </div>
+            <div class="edit-status" id="editStatus_15" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
         </div>
         
-        <div class="cert-wrapper" data-title="芙宁娜" data-issue-number="14" style="position: relative; padding-bottom: 60px;">
+        <div class="cert-wrapper" data-title="芙宁娜" data-issue-number="14" style="position: relative; padding-bottom: 70px;">
+            <!-- 复选框（管理员可见） -->
+            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
+                <input type="checkbox" class="card-select" data-issue="14" data-title="芙宁娜" />
+            </div>
+
             <div class="cert-module top-card">
                 <div class="top-title" id="title_14">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -312,7 +312,7 @@
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content" id="hospital_14">广州东仁医院</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
@@ -334,12 +334,25 @@
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADeklEQVR4nO2cTY6jMBCFXw1IWcIN+ijmZq05Ut8gHCU3gGVLoDeLcmGT9KoVJj96tUA44ZOxVKo/FzbidzL++SUIiBQpUqRIkSJFPh9pWVqY9asBcwuM/Wr+kN/N8dTw4LcV+ZRkIklOADkBNmA1+5waArMZgIYAGpIk9+Qj3lbkU5LzZl/mE3kGgLEHMH4ssM8pWyQza+83p8j3JG3Aahg/SPJihjQBGO1EGw6bU+SbkeMHaZ+XFkBHYuwBkt925Jwi34LsmD1Yuphh7BHRNRragMb/Jbncb06Rb0WOZmbWAwAaugdLl1NYpLmFDVg9LXv824p8KtJD5HrDo/s2jj2MmAGOH9/5bv/Uq61T5HEkPF1PZLY+6BbwjMZT/WyRuMA9Hbr8MM+vtU6Rx5GuQyXY4bkjkabGL+TURKDkurYE8VrrFHkciapsmCZkHdqKiq5N6Ba4NvlFOiSylqJDkXQ1zGlatzNQfpkgOyTyJ5IkaWanHAXlHY7VbOiYy4ujtV679uFLrlPkEWS2Kh4/h6UBugUeD527+C2R2UDJDoncSfZlW40RAFxzzlEpKr4M28ardEjkJkWHwg41zPoSv5UEPyds0iGRtUR9aLkeFg9Wpf9um6RDImupfVm3oMrjt7wsS8fI8qVDImuJ3D5in1Kizvqyj6kVD4m8kcjLcikxUjIgGx4AJbCOO+mQyErCl0VPhwc72AJr7LdDVKcWeSOlTl1ysCqP9yw/QqE6xH6tdYo8jgxfxqVKurIv223eR3QtOyTyWq7zstIAUpQrl4uidi0dErmTCHbqZg9kN8bdXse0ZW3SIZG1FDtUEjFXH0/wAZRQSPtlIn8QVuL9ZqX/ntWwbiKSDomsJdQn77TuHBqQN80mALkvDdBeh8i9VL4sbXao8m9AxNlxJzskcifVdx0EFhgAvyB9GQisLTEDSGfA0G0fd7zWOkUeTZZzPwCU0z4amvWADWjoZ4HccU6Rb0amLSiqmqqxGtLltEVGS/6WcXj024p8SjLO/bBhbhFdIPG9/Rlw9bnvnCLfg2yvxhz7ZkG6GJC+2uXm32H73PW11inyP5Ipzhri334134cd+9WiDVZnNoi8Fs/j01Zj9GFVHyqNaKVFX7m9yEpyLcilqbtAsAVFiTcdjdIhkSHX537EXcMyYvl0WvUhkSJFihQpUuTbkf8AZIN4p6vZRUAAAAAASUVORK5CYII=" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
+                    <div class="qrcode-title" id="bottomText_14">此健康信息已上报平台</div>
                 </div>
             </div>
+
+            <!-- 按钮组 -->
+            <div class="button-group" id="buttonGroup_14" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
+                <button class="edit-btn" id="editBtn_14" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
+                <button class="save-btn" id="saveBtn_14" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
+                <button class="cancel-btn" id="cancelBtn_14" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+            </div>
+            <div class="edit-status" id="editStatus_14" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
         </div>
         
-        <div class="cert-wrapper" data-title="潘启宁" data-issue-number="13" style="position: relative; padding-bottom: 60px;">
+        <div class="cert-wrapper" data-title="潘启宁" data-issue-number="13" style="position: relative; padding-bottom: 70px;">
+            <!-- 复选框（管理员可见） -->
+            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
+                <input type="checkbox" class="card-select" data-issue="13" data-title="潘启宁" />
+            </div>
+
             <div class="cert-module top-card">
                 <div class="top-title" id="title_13">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -365,7 +378,7 @@
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content" id="hospital_13">广州东仁医院</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
@@ -387,12 +400,25 @@
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADiklEQVR4nO2cXYrcMBCEqyPDPsqwB5ijyDcLuZl9lD1AwHpckKk86MeydwMhrMnMpPphGI/5sAVNdXVbHiP+LpZvfwkCIkWKFClSpEiR90daiQE2RbN6cjMsI4BlRD6RY/qSa4p8MjKQJFcA8GTOlwmOCG8lpTjDkSR5JP/F3Yq8SzI2fYlmWEZHztEMyy0BwJYTycyGr7umyOck+WN0RC5jN9ImuCw8Nl12TZHPRdrk3w1hBQBsxjn/7D6Oke7hbkXeA1lLkyeACBDxhbbcCIQVNMAAYEgAgD6THmudIi8nFzMzG2vJCm8DbIoDEFbHXZbMrHVtD7lOkReQWYd2fSGQytfl9m79N3+sZ4+1TpHXkcjtemDNnKI57ZtPRYzgWRQpkOT8WOsUeR3Z61CYt4HLLQ0AXAKiSwBAAzYjsB1E67HWKfI6MusQZ0+Sa2m/8uHsE7qhYsh6VT6kQyJrDP2BfzcijjD4bSDiC4H4mkoSxRFc2nOQB1unyOvIokNkArkWCQLgikdqBghh3c2TdEhkFyUtVmBPpJo+rha0/BuzsS7V77HWKfI6sjoeT3LO4+hqisi9JUuoZ6G+TOQpOh2afWo/O1YdYve0njOaC3+sdYq8jjz6IddtAMmbPXJe+cNZ6ZDIQ+y1LM8T96oWmIrFDkzFLbVNRMohkS3YohQvuJpNqKaoDKvLRjTpkMhjVLPjWE10nTF2dav2+1WWlEMiu+hyaEZ1zbNP6CpY9kgA1NuL/CQO8yE2F5TQpRSbGIVVfkjkOUpKrECXIGx2Ordk1RSplon8JHb16axzyatS38qIOoc8tchz7LWs7Fncs4lVc1o2FXukHBLZR50PldFQX7LWNrtuKSVPLfJjHPqy9qhsBbC/zdFUSnNqkZ/EqS/bG7FSxmrx6qqadEjkZ6RP5SXWsDpiGTcDsJlN8YX5RHv14w7uVuQ9kd2zjs4ZhfoIdt9EdNqIJh0SWSPvha07XF0C4pB33RsA43J7NwKOhviaAE9YmP/V3Yq8YzK0QSPgiGUE9i36yP/Z0J7Dzl9zTZFPQn6YD7VU6fp47m+fMakvE/kHZGnO3qqJXuylbEn7MUqHRJ5iOB0TAC1wGww+DUQcksH/NAYCFt4G+SGRpzgPf/YXOVqHVidF1J58kb8n9//9+L4CNvlmsWNRKrNxs7ob7UuuKfJJSNN/nIsUKVKkSJEi/3PyF/SdZTM+pXgAAAAAAElFTkSuQmCC" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
+                    <div class="qrcode-title" id="bottomText_13">此健康信息已上报平台</div>
                 </div>
             </div>
+
+            <!-- 按钮组 -->
+            <div class="button-group" id="buttonGroup_13" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
+                <button class="edit-btn" id="editBtn_13" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
+                <button class="save-btn" id="saveBtn_13" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
+                <button class="cancel-btn" id="cancelBtn_13" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+            </div>
+            <div class="edit-status" id="editStatus_13" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
         </div>
         
-        <div class="cert-wrapper" data-title="jj" data-issue-number="12" style="position: relative; padding-bottom: 60px;">
+        <div class="cert-wrapper" data-title="jj" data-issue-number="12" style="position: relative; padding-bottom: 70px;">
+            <!-- 复选框（管理员可见） -->
+            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
+                <input type="checkbox" class="card-select" data-issue="12" data-title="jj" />
+            </div>
+
             <div class="cert-module top-card">
                 <div class="top-title" id="title_12">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -418,7 +444,7 @@
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content" id="hospital_12">广州东仁医院</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
@@ -440,12 +466,25 @@
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADvklEQVR4nO2cXY6rOBBGTw1I/WikLKCXAju4S7qaJc0OYClZQEvwGMnomweXgaB+utNRdzJVD4SfHBlLpcKfq2wTf2bTX38IQpBBBhlkkEEGGeTPI82txYZy2WIDa7nL1IENS/3X8M1vG+TPItvy048Ay+XwROWwdBgJxNJkAOy/thnka5JLjS+TWXESG5YWpveMRla/Z9Z+XZtBviapMUka082Y3iUb6oP97MvbDPK1SBtYjf76JmleTSONoBwe1WaQz03WT1MSsIBY3mT9mLF+bGT91QDaMhQ6etJz9TPIh5OTmZl12ydraeuBRvQzwCbTvqjNIF+ELHFojy9iWU0swNRVCTa938xD1Ve0GeRrkUiS6JX9up8bSXMjSRmNgDQ3giSPSL0kjc/VzyAfRxYf0gjuG5obaSz+0sg9bAZJmXoWPhTkwWoccvcBGncpUoa+BiP6+r+IQ0HemY+Hpu6j1fTrZmK5YP18yeYD6w7rRTnTZBv5XP0M8tGk/b622LC02JBuBqxWYs5mNgDHe8/YzyAfQW5xCCB9tLB0UC6XS9b0nluxdEASRpqriHuufgb5ONJHyJopkmyXX35PEqRMnbEmdFmQJ9t9qIj5cjY3dehMFWdAlfrhQ0Eebdf2uyMVWT/eKTSfM5qJOBTkydyH0ibcN/c5OJcydcpxe/Bc/QzycWSdH5oBqJFmS9T7ZyzV6cWRJuaHgvyM1N8dQLqZDUmCdDP62UtBiudMXePe9N1vG+TPIou2N9IM0+CTiqUAhJTbEo28AGQ1SlXst71tkD+RPOQ69uRGFfP7OFvnHFp8y4Lc7OBDnpTPB89xSbb7VYp8WZBnu3MVed3rloJ1qX/IesSYOsiz3c1T+/Sixi3meB1jc6/yw4eCPFj9lmUgbTPWdT7RMxxpC0ZJMR4K8lNyMi+gtoG6uKOIeYD+6k+la6xzDfJkdZ3rP5dcBL4remG9VlOv1WrKPgM0Oda5BvkpmTIal9ZrFln2xa5vKlHKl36ssa4jyJPp3ii1sIdiD7/c5X+Mh4L8hNz3/aCUMF593w9JN6Okz5YWSNv66WfsZ5APJPtN4JOkslODJHlFY0lzeKrMP3dP2c8gH0hu+34ch0ItNtDIfl/bbUOQNXRZkPfWnm+4QmsEZGAxNHVNZhqazNTNCl0W5J2dfUhwM7G0menXvO1h9WHqBdZf21r88Vz9DPLxZPKaxeMAqD7wYv3yNLR9kGerih7whKqnyrRVVh8Xd0TePsizWexxHmSQQQYZZJBB/s/JfwHWsfvbfkOvBwAAAABJRU5ErkJggg==" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
+                    <div class="qrcode-title" id="bottomText_12">此健康信息已上报平台</div>
                 </div>
             </div>
+
+            <!-- 按钮组 -->
+            <div class="button-group" id="buttonGroup_12" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
+                <button class="edit-btn" id="editBtn_12" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
+                <button class="save-btn" id="saveBtn_12" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
+                <button class="cancel-btn" id="cancelBtn_12" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+            </div>
+            <div class="edit-status" id="editStatus_12" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
         </div>
         
-        <div class="cert-wrapper" data-title="测试01" data-issue-number="11" style="position: relative; padding-bottom: 60px;">
+        <div class="cert-wrapper" data-title="测试01" data-issue-number="11" style="position: relative; padding-bottom: 70px;">
+            <!-- 复选框（管理员可见） -->
+            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
+                <input type="checkbox" class="card-select" data-issue="11" data-title="测试01" />
+            </div>
+
             <div class="cert-module top-card">
                 <div class="top-title" id="title_11">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -471,7 +510,7 @@
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content" id="hospital_11">广州东仁医院</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
@@ -493,12 +532,25 @@
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADiklEQVR4nO2cTW7jOBCFXw0FeEkBOUCOIt2gjxT0keYG0lFygADU0gCFN4siRclONu42EnveWyiWww+0gEL9kEUZcZvmf24EAZEiRYoUKVKkyJ9HWlEHzNbUwUYftpqNS/16/OZfK/JnkZ3/GSYAWF5giAkA1g7AapwtZAMAYgkZAGB/OqfI5ySX4l84LWYAAjEkwN54NjIFL9/cVf2tOUU+KTkwA8DqhsRpaQHtbnOKfCrSxuVEMzsRiGcPW/z9Wj7dZ06Rj02CJImBJJkCOUWSU8wAYna3RCbA/9sGT4/1nCLvRxYbKgrEkL681FGyIZEH8UITgOaHyi1CdVVt3GM9p8j7kTWWVXfjcWtCoF/IFtXIEtpkQyL3arHMvU9xN9lvq1si4WVaVD4k8kK+3MP5V4KVu7UDYiKGtPoYA7pch2wF2mM9p8j7kYdYRm6eZvNDkWyxzB2UYpnIg2omHUo6TWa4SSFmANh/2oU72ZDIqn2p1UzFLafkPn7BlmLLhkTuVba/5hHA8N6BvvEKgFi6zNlCBpaXzHlcjVj67/y1In8iWWNZq7ficZHoMK65JfkhkVW19yMBwPKS620PG95PNCBkQ0wwIGTOffrOXyvyJ5JbPpRRLmlLrFvuE1lXIOWHRF5pF8s8a/YqvxVnx5w6QTm1yAvta/uaCgFbXYYtKdJeh8gvVMNTrlurae9uysZr81JtIeCxnlPk/chdLPOF6dL3GmoEi7UzZEiHLTXZkMgq90MevOoq4n6NMTXvUzJu2ZDIow5+aOtG21oYJ2C/czYolom8UjGJhOpkWifRVu9PqL2wU5QNibxUrcsAoBkIqvdxyzlEOsUykZ+Q9saMcg5oMSuZ9HKijVjNxpiBIa2m82Uir1V70PoPGOKHEaC3mnlqNPchGxYD5x4A4kc1osd6TpH3Iz85G1Ty59qYz/0birTGKPJaPMqXgchtiToem4i0PiTyUh6ZapN0yJxfCcy/EjD8eyrN+t5jve3q/+mcIp+SHGqB76nzCIC/e8BGAPXodP6MvH1OkU9G1vd+2Lh0vlJkb2k1eCYN+IuJ/u6cIp+T5BQzbMRqmPtA8r0DybOVfpD3E78gb59T5HORuxWggWfD/Ho2sz4Qcx+I+TV/Rd4+p8jHJq9q+7Zv34b4bn2CanuRn6nu2wM4dp61o0IXZxRV24s8yPSOc5EiRYoUKVLk/5z8DxPBltPa9G9NAAAAAElFTkSuQmCC" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
+                    <div class="qrcode-title" id="bottomText_11">此健康信息已上报平台</div>
                 </div>
             </div>
+
+            <!-- 按钮组 -->
+            <div class="button-group" id="buttonGroup_11" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
+                <button class="edit-btn" id="editBtn_11" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
+                <button class="save-btn" id="saveBtn_11" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
+                <button class="cancel-btn" id="cancelBtn_11" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+            </div>
+            <div class="edit-status" id="editStatus_11" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
         </div>
         
-        <div class="cert-wrapper" data-title="潘启杰" data-issue-number="10" style="position: relative; padding-bottom: 60px;">
+        <div class="cert-wrapper" data-title="潘启杰" data-issue-number="10" style="position: relative; padding-bottom: 70px;">
+            <!-- 复选框（管理员可见） -->
+            <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
+                <input type="checkbox" class="card-select" data-issue="10" data-title="潘启杰" />
+            </div>
+
             <div class="cert-module top-card">
                 <div class="top-title" id="title_10">广东省食品从业人员健康证明</div>
                 <div class="top-content">
@@ -524,7 +576,7 @@
                         <div class="info-line">
                             <span class="label">体检单位</span>
                             <span class="colon">∶</span>
-                            <span class="content">广州东仁医院</span>
+                            <span class="content" id="hospital_10">广州东仁医院</span>
                         </div>
                         <div class="info-line last-line">
                             <span class="label">体检日期</span>
@@ -546,9 +598,17 @@
                     <div class="qrcode-img">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADnklEQVR4nO2czY3bShCEqx8J+DgEFIBCoTJ4ITmmzYAM5QVggHNcYIjyoeePtOGDnwRLcvVBK3H1gSLQqK6eadKI34v1n98EAZEiRYoUKVKkyOcjLccIu2G39oJ1ArBOgN1i+dbtD/9akc9Fjv5nXgAgXvwTEScAGIj5PwPzsSEBAOz/nlPke5Kx6kv8QlcfRDOs1wQAuyeOmY33O6fI9yDH02euEwzAkLBeCUMYvPu3+eNe5xT53qR9ZQLmbTcAu3Hxw8OPy0jP8GtFPgNZdCgQQAS42kBbpyFh3kDL9md0K9Rn0mtdp8iHk6uZmU2Afd0AzBtgtzgC8zYQ8wYA2L0t+/O/VuRTka5DTV8IJAAhAev1M+eLvwvHevZa1ynycSRIkpiZDkdDQlYffzcQCMyKNJPk8lrXKfJxZNGhOPkikSFswPrvQJQFIRqwG4H9IFqvdZ0iH06u00AucYSvCvmxVssmwG7IYmS3+5xT5JuQtS/7ZvS69XFJAPaRiF8IxEvKwhMncLVKvtZ1inwc6X6I3AByG8glJMC3OVhM0cxshYp5kh8S2cJ1KC9Ch08j4gjMy25AvBDrNY15+yzQ3ZL8kMhjuLQgkMjqk9s0kq0lS+BSF6ulQyL7KH4oGoDwzeCaEy80YCDWawJRm7P1pr5M5Dk6HXLNAcAlkOUlLzm6W+IG6ZDIU2SbvAFAyZycUkyeTa20ccGQTbhySGSJ1pd55+W2J6T637L10f4rHRJ5iFbLDia65hWrNmFgkSXlkMguuhxakJXGXVCrYNzq1wNVy0SeovNDs2dTnzmeV6xiNG/yQyLP0fkhr1bumlPnjJopUi0T+ZMotSwXr3zM+/jB61sWKA95apHnyDl0kKDW6nu+1GzKRU45JLKPkw5lT90KWqi9fde/KYdEdlF0qPhnT58NQLubwx231qlF/jxKX9acNMqwB/OaUf5KrWrSIZGHKAmSp4a6IaK5LTl295cph0Seg8fI2xx12GPuUqofRFMOiSyRZ9DypyFh/hhBYEce9rh+GoGBhnhJPojmD3h4resU+XByPiw0YrWxM9vwZzbUfdjlPucU+SbkYa+jziz6NkdoJa7cfeYeSbVMZB8/5FBZH+pniuqa0RK0xijyHKcc6pr5Or1YNs10n6vIX5EuN/C7FduNinYLn9aGZPPDre50TpFvRR6f+2G3UC12zFP7ZtNuZRrtLucU+Sak6RnnIkWKFClSpMi/nPwO5fRFzXQHx0AAAAAASUVORK5CYII=" alt="防伪二维码">
                     </div>
-                    <div class="qrcode-title">此健康信息已上报平台</div>
+                    <div class="qrcode-title" id="bottomText_10">此健康信息已上报平台</div>
                 </div>
             </div>
+
+            <!-- 按钮组 -->
+            <div class="button-group" id="buttonGroup_10" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
+                <button class="edit-btn" id="editBtn_10" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
+                <button class="save-btn" id="saveBtn_10" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
+                <button class="cancel-btn" id="cancelBtn_10" style="background: #6c757d; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">取消</button>
+            </div>
+            <div class="edit-status" id="editStatus_10" style="position: absolute; bottom: 50px; right: 12px; font-size: 12px; color: #2b6ef0; z-index: 20; display: none;"></div>
         </div>
         
         </div>
@@ -562,8 +622,8 @@
             const params = new URLSearchParams(window.location.search);
             const idParam = params.get('id');
             const editParam = params.get('edit');
-            const adminParam = params.get('admin');
             
+            const isAdmin = (editParam === '123456');
             const wrappers = document.querySelectorAll('.cert-wrapper');
             const notFound = document.getElementById('notFoundMessage');
             const adminBar = document.getElementById('adminBar');
@@ -572,86 +632,63 @@
             const batchDeleteBtn = document.getElementById('batchDeleteBtn');
             const batchStatus = document.getElementById('batchStatus');
             
-            // ===== 判断角色 =====
-            const isSuperAdmin = (adminParam === '888888');
-            const isNormalAdmin = (editParam === '123456');
-            const hasAdmin = isSuperAdmin || isNormalAdmin;
-            
-            // ===== 超级管理员：显示所有卡片，显示管理栏 =====
-            if (isSuperAdmin) {
+            // ===== 管理员模式：显示管理栏，列出所有卡片 =====
+            if (isAdmin) {
                 adminBar.style.display = 'flex';
-                wrappers.forEach(w => {
-                    w.style.display = 'block';
-                    // 添加复选框
-                    const cb = document.createElement('div');
-                    cb.className = 'card-checkbox';
-                    cb.innerHTML = `<input type="checkbox" class="card-select" data-issue="$${w.dataset.issueNumber}" data-title="$${w.dataset.title}" />`;
-                    w.prepend(cb);
-                    // 在超级管理员模式下，显示编辑按钮
-                    const editBtn = w.querySelector('.edit-btn');
-                    if (editBtn) editBtn.style.display = 'block';
-                });
-                notFound.style.display = 'none';
-            }
-            
-            // ===== 普通管理员：只显示匹配的卡片 =====
-            if (isNormalAdmin && idParam) {
-                let decodedId = '';
-                try { decodedId = decodeURIComponent(idParam); } catch(e) { decodedId = idParam; }
-                let found = false;
-                wrappers.forEach(w => {
-                    const title = w.dataset.title;
-                    if (title === decodedId) {
-                        w.style.display = 'block';
-                        found = true;
-                        // 显示编辑按钮
-                        const editBtn = w.querySelector('.edit-btn');
-                        if (editBtn) editBtn.style.display = 'block';
-                    } else {
-                        w.style.display = 'none';
+                // 显示复选框
+                document.querySelectorAll('.card-checkbox').forEach(cb => cb.style.display = 'block');
+                // 显示所有卡片（如果带 id 则过滤）
+                if (idParam) {
+                    let decodedId = '';
+                    try { decodedId = decodeURIComponent(idParam); } catch(e) { decodedId = idParam; }
+                    let found = false;
+                    wrappers.forEach(w => {
+                        const title = w.dataset.title;
+                        if (title === decodedId) {
+                            w.style.display = 'block';
+                            found = true;
+                        } else {
+                            w.style.display = 'none';
+                        }
+                    });
+                    if (!found) {
+                        wrappers.forEach(w => w.style.display = 'none');
+                        notFound.style.display = 'block';
                     }
-                });
-                if (!found) {
-                    wrappers.forEach(w => w.style.display = 'none');
-                    notFound.style.display = 'block';
+                } else {
+                    wrappers.forEach(w => w.style.display = 'block');
+                    notFound.style.display = 'none';
+                }
+            } else {
+                // 非管理员模式
+                if (idParam) {
+                    let decodedId = '';
+                    try { decodedId = decodeURIComponent(idParam); } catch(e) { decodedId = idParam; }
+                    let found = false;
+                    wrappers.forEach(w => {
+                        const title = w.dataset.title;
+                        if (title === decodedId) {
+                            w.style.display = 'block';
+                            found = true;
+                        } else {
+                            w.style.display = 'none';
+                        }
+                    });
+                    if (!found) {
+                        wrappers.forEach(w => w.style.display = 'none');
+                        notFound.style.display = 'block';
+                    }
+                } else {
+                    wrappers.forEach(w => w.style.display = 'block');
+                    notFound.style.display = 'none';
                 }
             }
             
-            // ===== 没有管理员：只按 id 过滤（普通用户） =====
-            if (!hasAdmin && idParam) {
-                let decodedId = '';
-                try { decodedId = decodeURIComponent(idParam); } catch(e) { decodedId = idParam; }
-                let found = false;
-                wrappers.forEach(w => {
-                    const title = w.dataset.title;
-                    if (title === decodedId) {
-                        w.style.display = 'block';
-                        found = true;
-                    } else {
-                        w.style.display = 'none';
-                    }
-                });
-                if (!found) {
-                    wrappers.forEach(w => w.style.display = 'none');
-                    notFound.style.display = 'block';
-                }
-            }
+            // ===== 管理员专属功能 =====
+            if (!isAdmin) return;
             
-            // ===== 如果没有任何管理员且没有 id，显示所有卡片 =====
-            if (!hasAdmin && !idParam) {
-                wrappers.forEach(w => w.style.display = 'block');
-            }
-            
-            // ===== 如果只有普通管理员但没有 id，显示所有卡片（但无编辑权限） =====
-            if (isNormalAdmin && !idParam) {
-                wrappers.forEach(w => w.style.display = 'block');
-            }
-            
-            // ===== 只有管理员才能看到编辑功能 =====
-            if (!hasAdmin) return;
-            
-            // ===== 超级管理员搜索 =====
-            if (isSuperAdmin && searchInput) {
+            // 搜索过滤
+            if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const keyword = this.value.trim().toLowerCase();
                     wrappers.forEach(w => {
@@ -661,8 +698,8 @@
                 });
             }
             
-            // ===== 全选/取消全选 =====
-            if (isSuperAdmin && selectAll) {
+            // 全选/取消全选
+            if (selectAll) {
                 selectAll.addEventListener('change', function() {
                     const checked = this.checked;
                     document.querySelectorAll('.card-select').forEach(cb => cb.checked = checked);
@@ -680,11 +717,11 @@
             
             function updateBatchStatus() {
                 const checked = document.querySelectorAll('.card-select:checked');
-                batchStatus.textContent = `已选 ${checked.length} 张`;
+                batchStatus.textContent = checked.length > 0 ? `已选 ${checked.length} 张` : '';
             }
             
-            // ===== 批量删除 =====
-            if (isSuperAdmin && batchDeleteBtn) {
+            // 批量删除
+            if (batchDeleteBtn) {
                 batchDeleteBtn.addEventListener('click', function() {
                     const checked = document.querySelectorAll('.card-select:checked');
                     if (checked.length === 0) {
@@ -750,25 +787,51 @@
                 const nameEl = document.getElementById('name_' + issueNumber);
                 const genderEl = document.getElementById('gender_' + issueNumber);
                 const idEl = document.getElementById('id_' + issueNumber);
+                const hospitalEl = document.getElementById('hospital_' + issueNumber);
                 const dateEl = document.getElementById('date_' + issueNumber);
                 const middleTextEl = document.getElementById('middleText_' + issueNumber);
-                const group = document.getElementById('buttonGroup_' + issueNumber);
+                const bottomTextEl = document.getElementById('bottomText_' + issueNumber);
                 const saveBtn = document.getElementById('saveBtn_' + issueNumber);
-                const deleteBtn = document.getElementById('deleteBtn_' + issueNumber);
                 const cancelBtn = document.getElementById('cancelBtn_' + issueNumber);
                 const editStatus = document.getElementById('editStatus_' + issueNumber);
                 
-                if (!group) return;
-                
+                // 进入编辑状态
                 btn.addEventListener('click', function() {
-                    btn.style.display = 'none';
-                    group.classList.remove('hidden');
-                    [titleEl, nameEl, genderEl, idEl, dateEl, middleTextEl].forEach(el => {
+                    // 切换编辑状态
+                    const isEditing = btn.textContent === '取消编辑';
+                    if (isEditing) {
+                        // 退出编辑状态
+                        btn.textContent = '编辑';
+                        saveBtn.style.display = 'none';
+                        cancelBtn.style.display = 'none';
+                        [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {
+                            if (el) {
+                                el.contentEditable = false;
+                                el.classList.remove('editable-field');
+                            }
+                        });
+                        // 恢复性别下拉为文本
+                        if (genderEl) {
+                            const select = genderEl.querySelector('.gender-select');
+                            if (select) {
+                                genderEl.innerHTML = select.value;
+                            }
+                        }
+                        editStatus.style.display = 'none';
+                        return;
+                    }
+                    
+                    // 进入编辑状态
+                    btn.textContent = '取消编辑';
+                    saveBtn.style.display = 'inline-block';
+                    cancelBtn.style.display = 'inline-block';
+                    [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {
                         if (el) {
                             el.contentEditable = true;
                             el.classList.add('editable-field');
                         }
                     });
+                    // 性别改为下拉
                     if (genderEl) {
                         const currentGender = genderEl.textContent.trim();
                         genderEl.contentEditable = false;
@@ -778,15 +841,18 @@
                         </select>`;
                     }
                     editStatus.textContent = '编辑中...';
+                    editStatus.className = 'edit-status';
                     editStatus.style.display = 'block';
                 });
                 
+                // 取消编辑
                 if (cancelBtn) {
                     cancelBtn.addEventListener('click', function() {
                         location.reload();
                     });
                 }
                 
+                // 保存编辑
                 if (saveBtn) {
                     saveBtn.addEventListener('click', function() {
                         const newTitle = titleEl ? titleEl.textContent.trim() : '广东省食品从业人员健康证明';
@@ -799,8 +865,10 @@
                             newGender = genderEl ? genderEl.textContent.trim() : '男';
                         }
                         const newId = idEl ? idEl.textContent.trim() : '';
+                        const newHospital = hospitalEl ? hospitalEl.textContent.trim() : '广州东仁医院';
                         const newDate = dateEl ? dateEl.textContent.trim() : '';
                         const newMiddle = middleTextEl ? middleTextEl.textContent.trim() : '广东省食品从业人员';
+                        const newBottom = bottomTextEl ? bottomTextEl.textContent.trim() : '此健康信息已上报平台';
                         
                         let token = localStorage.getItem('github_token');
                         if (!token) {
@@ -815,7 +883,7 @@
                         
                         const repo = 'merryAndrew/HealthCertificate';
                         const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}`;
-                        const body = `姓名：${newName}\n性别：${newGender}\n身份证：${newId}\n体检日期：${newDate}\n中间文字：${newMiddle}`;
+                        const body = `姓名：${newName}\n性别：${newGender}\n身份证：${newId}\n体检单位：${newHospital}\n体检日期：${newDate}\n中间文字：${newMiddle}\n底部文字：${newBottom}`;
                         
                         editStatus.textContent = '⏳ 保存中...';
                         editStatus.className = 'edit-status';
@@ -836,7 +904,8 @@
                         .then(() => {
                             editStatus.textContent = '✅ 保存成功！正在重新生成...';
                             editStatus.className = 'edit-status success';
-                            [titleEl, nameEl, idEl, dateEl, middleTextEl].forEach(el => {
+                            // 恢复只读
+                            [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {
                                 if (el) {
                                     el.contentEditable = false;
                                     el.classList.remove('editable-field');
@@ -845,53 +914,13 @@
                             if (genderSelect) {
                                 genderEl.innerHTML = genderSelect.value;
                             }
-                            group.classList.add('hidden');
-                            btn.style.display = 'block';
+                            // 恢复按钮状态
+                            btn.textContent = '编辑';
+                            saveBtn.style.display = 'none';
+                            cancelBtn.style.display = 'none';
                             setTimeout(() => {
                                 editStatus.textContent = '🔄 刷新查看更新';
                             }, 3000);
-                        })
-                        .catch(err => {
-                            editStatus.textContent = '❌ ' + err.message;
-                            editStatus.className = 'edit-status error';
-                        });
-                    });
-                }
-                
-                if (deleteBtn) {
-                    deleteBtn.addEventListener('click', function() {
-                        if (!confirm('确定删除此卡片？不可恢复。')) return;
-                        let token = localStorage.getItem('github_token');
-                        if (!token) {
-                            token = prompt('请输入您的 GitHub Token（删除需要）:');
-                            if (token) localStorage.setItem('github_token', token);
-                        }
-                        if (!token) {
-                            editStatus.textContent = '❌ 需要 Token';
-                            editStatus.className = 'edit-status error';
-                            return;
-                        }
-                        const repo = 'merryAndrew/HealthCertificate';
-                        const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}`;
-                        editStatus.textContent = '⏳ 删除中...';
-                        editStatus.className = 'edit-status';
-                        fetch(url, {
-                            method: 'PATCH',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Accept': 'application/vnd.github.v3+json',
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ state: 'closed' })
-                        })
-                        .then(res => {
-                            if (!res.ok) throw new Error('删除失败');
-                            return res.json();
-                        })
-                        .then(() => {
-                            editStatus.textContent = '✅ 已删除，正在刷新...';
-                            editStatus.className = 'edit-status success';
-                            setTimeout(() => location.reload(), 1500);
                         })
                         .catch(err => {
                             editStatus.textContent = '❌ ' + err.message;
