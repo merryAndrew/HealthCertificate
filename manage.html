@@ -7,10 +7,25 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #f2f4f8; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Roboto, Arial, sans-serif; padding: 20px; color: #1a2332; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 24px; border:1px solid #CCCCCC;}
-        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
-        .header h1 { font-size: 22px; }
-        .header .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 24px; border:1px solid #CCCCCC; }
+
+        /* ===== 头部：标题一行，按钮一行 ===== */
+        .header-title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .header-actions .btn-left { flex-shrink: 0; }
+        .header-actions .btn-right { flex-shrink: 0; }
+
         .btn { padding: 8px 18px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; background: #e1e4e8; color: #24292f; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
         .btn-primary { background: #1a2332; color: #fff; }
         .btn-primary:hover { background: #2d3a4f; }
@@ -65,7 +80,6 @@
         .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
         .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
 
-        /* 操作列：自适应宽度，按钮分行居中 */
         .action-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .action-row { display: flex; gap: 4px; justify-content: center; }
 
@@ -135,13 +149,13 @@
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>📋 数据管理</h1>
-        <div class="actions">
-            <button class="btn btn-outline" id="refreshBtn">🔄 刷新</button>
-            <a href="upload.html" class="btn btn-success">🔙 返回</a>
-        </div>
+    <!-- ===== 头部：标题一行，按钮一行（返回左，刷新右） ===== -->
+    <div class="header-title">📋 数据管理</div>
+    <div class="header-actions">
+        <button class="btn btn-success btn-left" onclick="window.history.back()">🔙 返回</button>
+        <button class="btn btn-outline btn-right" id="refreshBtn">🔄 刷新</button>
     </div>
+
     <div class="search-bar">
         <input type="text" id="searchInput" placeholder="🔍 搜索姓名...">
         <span class="badge" id="countDisplay">共 0 条</span>
@@ -317,7 +331,6 @@
     var MAX_POLLS = 24;
     var originalData = null;
 
-    // ---- Toast 居中 ----
     function showToastCenter(icon, msg, sub) {
         toastIcon.textContent = icon || '✅';
         toastMsg.textContent = msg || '操作成功';
@@ -334,7 +347,6 @@
     }
     function hideLoading() { loadingOverlay.classList.remove('active'); }
 
-    // ---- 解析 Issue ----
     function parseIssue(issue) {
         var body = issue.body || '';
         var get = function(key) { var m = body.match(new RegExp(key + '[：:]\\s*(.+)')); return m ? m[1].trim() : ''; };
@@ -430,7 +442,6 @@
             html += '<td><img class="avatar" src="' + avatarSrc + '" alt="头像"></td>';
             html += '<td class="name-cell"><strong>' + escapeHtml(p.name) + '</strong></td>';
             html += '<td>' + escapeHtml(p.idCard) + '</td>';
-            // === 操作列 ===
             html += '<td>';
             html += '<div class="action-group">';
             html += '<div class="action-row">';
@@ -449,7 +460,6 @@
         bindEvents();
     }
 
-    // ---- 查看健康证 ----
     function viewCertificate(id) {
         var issue = null;
         for (var i = 0; i < allIssues.length; i++) {
@@ -464,7 +474,6 @@
         window.open(url, '_blank');
     }
 
-    // ---- 加载列表 ----
     function loadIssues() {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) {
@@ -517,7 +526,6 @@
         render();
     };
 
-    // ---- 打开编辑 ----
     function openEditModal(id) {
         var issue = null;
         for (var i = 0; i < allIssues.length; i++) {
@@ -570,7 +578,6 @@
         editModalOverlay.classList.add('active');
     }
 
-    // ---- 检测数据是否变化 ----
     function hasDataChanged() {
         var current = {
             title: f_title.value.trim(),
@@ -596,7 +603,6 @@
         return false;
     }
 
-    // ===== 核心：精准轮询单条卡片的 data-version =====
     function pollCardForIssue(issueNumber, oldVersion, onSuccess, onFail) {
         var count = 0;
         if (pollTimer) clearInterval(pollTimer);
@@ -647,7 +653,6 @@
         pollTimer = setInterval(check, 5000);
     }
 
-    // ---- 显示编辑失败状态 ----
     function showEditFail(errMsg) {
         editProgress.classList.remove('active');
         editStatus.textContent = '❌ ' + errMsg;
@@ -657,7 +662,6 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
-    // ---- 显示确认框失败状态 ----
     function showConfirmFail(errMsg) {
         confirmProgress.classList.remove('active');
         confirmProgress.querySelector('.bar').className = 'bar error';
@@ -668,7 +672,6 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
-    // ---- 编辑提交 ----
     editForm.onsubmit = function(e) {
         e.preventDefault();
 
@@ -743,7 +746,6 @@
         });
     };
 
-    // ---- 编辑失败关闭 ----
     editFailCloseBtn.onclick = function() {
         editModalOverlay.classList.remove('active');
         editProgress.classList.remove('active');
@@ -771,7 +773,6 @@
     editModalCloseBtn.onclick = closeEditModal;
     editModalOverlay.onclick = function(e) { if (e.target === this) closeEditModal(); };
 
-    // ---- 确认删除（单条） ----
     function confirmDelete(id) {
         var issue = null;
         for (var i = 0; i < allIssues.length; i++) {
@@ -792,7 +793,6 @@
         confirmModalOverlay.classList.add('active');
     }
 
-    // ---- 批量删除 ----
     batchDeleteBtn.onclick = function() {
         if (selectedIds.size === 0) { showToastCenter('⚠️', '请先选择要删除的数据', ''); return; }
         confirmTitle.textContent = '确认批量删除';
@@ -809,7 +809,6 @@
         confirmModalOverlay.classList.add('active');
     };
 
-    // ---- 执行单条删除 ----
     function doDelete(issue) {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); confirmModalOverlay.classList.remove('active'); return; }
@@ -849,7 +848,6 @@
         });
     }
 
-    // ---- 执行批量删除 ----
     function doBatchDelete() {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); confirmModalOverlay.classList.remove('active'); return; }
@@ -899,7 +897,6 @@
             });
     }
 
-    // ---- 确认框失败关闭 ----
     confirmFailCloseBtn.onclick = function() {
         confirmModalOverlay.classList.remove('active');
         confirmProgress.classList.remove('active');
@@ -914,7 +911,6 @@
     confirmCancelBtn.onclick = function() { confirmModalOverlay.classList.remove('active'); };
     confirmModalOverlay.onclick = function(e) { if (e.target === this) { confirmModalOverlay.classList.remove('active'); if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } } };
 
-    // ---- 头像上传 ----
     editFileBtn.onclick = function() { editAvatarFile.click(); };
     editAvatarFile.onchange = function() { editFileName.textContent = this.files && this.files.length > 0 ? this.files[0].name : '未选择'; };
     editUploadBtn.onclick = function() {
@@ -953,7 +949,11 @@
 
     refreshBtn.onclick = loadIssues;
 
-    var today = new Date().toISOString().split('T')[0];
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+    var today = year + '-' + month + '-' + day;
     if (f_date) f_date.value = today;
 
     if (!getRepo() || !getToken()) {
