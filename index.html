@@ -131,11 +131,64 @@
         }
         .edit-status.error { color: #e53e3e; }
         .edit-status.success { color: #2f9e44; }
+        .delete-dialog {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .delete-dialog-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .delete-dialog-box h3 {
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+        .delete-dialog-box .card-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .delete-dialog-box .card-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        .delete-dialog-box .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+        .delete-dialog-box .btn-row button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-dialog-box .btn-confirm {
+            background: #e53e3e;
+            color: #fff;
+        }
+        .delete-dialog-box .btn-cancel-dialog {
+            background: #e8ecf2;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- 管理员栏（仅管理员可见） -->
         <div id="adminBar" style="display: none;" class="admin-bar">
             <input type="text" id="searchInput" placeholder="🔍 搜索姓名..." />
             <div class="checkbox-container">
@@ -146,11 +199,9 @@
             <span class="badge" id="batchStatus"></span>
         </div>
         
-        <!-- 卡片列表 -->
         <div id="cardsContainer">
             
         <div class="cert-wrapper" data-title="垃圾堆" data-issue-number="17" style="position: relative; padding-bottom: 70px;">
-            <!-- 复选框（管理员可见） -->
             <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
                 <input type="checkbox" class="card-select" data-issue="17" data-title="垃圾堆" />
             </div>
@@ -162,7 +213,7 @@
                         <div class="info-line">
                             <span class="label">姓 名</span>
                             <span class="colon">∶</span>
-                            <span class="content" id="name_17">垃圾堆</span>
+                            <span class="content" id="name_17">罗一顺</span>
                         </div>
                         <div class="info-line">
                             <span class="label">性 别</span>
@@ -189,7 +240,7 @@
                         </div>
                     </div>
                     <div class="photo">
-                        <img src="https://via.placeholder.com/70x90?text=No+Photo" alt="持证人照片">
+                        <img src="https://i.ibb.co/FLNN9hSB/file-0000000077288208854f7d3a6680d734.png" alt="持证人照片">
                     </div>
                 </div>
             </div>
@@ -206,7 +257,6 @@
                 </div>
             </div>
 
-            <!-- 按钮组 -->
             <div class="button-group" id="buttonGroup_17" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
                 <button class="edit-btn" id="editBtn_17" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
                 <button class="save-btn" id="saveBtn_17" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
@@ -216,7 +266,6 @@
         </div>
         
         <div class="cert-wrapper" data-title="ppp" data-issue-number="15" style="position: relative; padding-bottom: 70px;">
-            <!-- 复选框（管理员可见） -->
             <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
                 <input type="checkbox" class="card-select" data-issue="15" data-title="ppp" />
             </div>
@@ -272,7 +321,6 @@
                 </div>
             </div>
 
-            <!-- 按钮组 -->
             <div class="button-group" id="buttonGroup_15" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
                 <button class="edit-btn" id="editBtn_15" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
                 <button class="save-btn" id="saveBtn_15" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
@@ -282,7 +330,6 @@
         </div>
         
         <div class="cert-wrapper" data-title="芙宁娜" data-issue-number="14" style="position: relative; padding-bottom: 70px;">
-            <!-- 复选框（管理员可见） -->
             <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
                 <input type="checkbox" class="card-select" data-issue="14" data-title="芙宁娜" />
             </div>
@@ -338,7 +385,6 @@
                 </div>
             </div>
 
-            <!-- 按钮组 -->
             <div class="button-group" id="buttonGroup_14" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
                 <button class="edit-btn" id="editBtn_14" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
                 <button class="save-btn" id="saveBtn_14" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
@@ -348,7 +394,6 @@
         </div>
         
         <div class="cert-wrapper" data-title="潘启宁" data-issue-number="13" style="position: relative; padding-bottom: 70px;">
-            <!-- 复选框（管理员可见） -->
             <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
                 <input type="checkbox" class="card-select" data-issue="13" data-title="潘启宁" />
             </div>
@@ -404,7 +449,6 @@
                 </div>
             </div>
 
-            <!-- 按钮组 -->
             <div class="button-group" id="buttonGroup_13" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
                 <button class="edit-btn" id="editBtn_13" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
                 <button class="save-btn" id="saveBtn_13" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
@@ -414,7 +458,6 @@
         </div>
         
         <div class="cert-wrapper" data-title="jj" data-issue-number="12" style="position: relative; padding-bottom: 70px;">
-            <!-- 复选框（管理员可见） -->
             <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
                 <input type="checkbox" class="card-select" data-issue="12" data-title="jj" />
             </div>
@@ -470,7 +513,6 @@
                 </div>
             </div>
 
-            <!-- 按钮组 -->
             <div class="button-group" id="buttonGroup_12" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
                 <button class="edit-btn" id="editBtn_12" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
                 <button class="save-btn" id="saveBtn_12" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
@@ -480,7 +522,6 @@
         </div>
         
         <div class="cert-wrapper" data-title="测试01" data-issue-number="11" style="position: relative; padding-bottom: 70px;">
-            <!-- 复选框（管理员可见） -->
             <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
                 <input type="checkbox" class="card-select" data-issue="11" data-title="测试01" />
             </div>
@@ -536,7 +577,6 @@
                 </div>
             </div>
 
-            <!-- 按钮组 -->
             <div class="button-group" id="buttonGroup_11" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
                 <button class="edit-btn" id="editBtn_11" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
                 <button class="save-btn" id="saveBtn_11" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
@@ -546,7 +586,6 @@
         </div>
         
         <div class="cert-wrapper" data-title="潘启杰" data-issue-number="10" style="position: relative; padding-bottom: 70px;">
-            <!-- 复选框（管理员可见） -->
             <div class="card-checkbox" style="position: absolute; top: 12px; left: 12px; z-index: 25; display: none;">
                 <input type="checkbox" class="card-select" data-issue="10" data-title="潘启杰" />
             </div>
@@ -602,7 +641,6 @@
                 </div>
             </div>
 
-            <!-- 按钮组 -->
             <div class="button-group" id="buttonGroup_10" style="position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; justify-content: flex-end; gap: 8px; z-index: 30;">
                 <button class="edit-btn" id="editBtn_10" style="background: #2b6ef0; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer;">编辑</button>
                 <button class="save-btn" id="saveBtn_10" style="background: #2f9e44; color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 13px; cursor: pointer; display: none;">保存</button>
@@ -613,7 +651,6 @@
         
         </div>
         
-        <!-- 未找到提示 -->
         <div id="notFoundMessage" class="not-found" style="display: none;">未找到该健康证</div>
     </div>
     
@@ -632,12 +669,10 @@
             const batchDeleteBtn = document.getElementById('batchDeleteBtn');
             const batchStatus = document.getElementById('batchStatus');
             
-            // ===== 管理员模式：显示管理栏，列出所有卡片 =====
+            // ===== 管理员模式 =====
             if (isAdmin) {
                 adminBar.style.display = 'flex';
-                // 显示复选框
                 document.querySelectorAll('.card-checkbox').forEach(cb => cb.style.display = 'block');
-                // 显示所有卡片（如果带 id 则过滤）
                 if (idParam) {
                     let decodedId = '';
                     try { decodedId = decodeURIComponent(idParam); } catch(e) { decodedId = idParam; }
@@ -660,7 +695,6 @@
                     notFound.style.display = 'none';
                 }
             } else {
-                // 非管理员模式
                 if (idParam) {
                     let decodedId = '';
                     try { decodedId = decodeURIComponent(idParam); } catch(e) { decodedId = idParam; }
@@ -684,10 +718,9 @@
                 }
             }
             
-            // ===== 管理员专属功能 =====
             if (!isAdmin) return;
             
-            // 搜索过滤
+            // ===== 搜索 =====
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const keyword = this.value.trim().toLowerCase();
@@ -698,7 +731,7 @@
                 });
             }
             
-            // 全选/取消全选
+            // ===== 全选 =====
             if (selectAll) {
                 selectAll.addEventListener('change', function() {
                     const checked = this.checked;
@@ -720,7 +753,7 @@
                 batchStatus.textContent = checked.length > 0 ? `已选 ${checked.length} 张` : '';
             }
             
-            // 批量删除
+            // ===== 批量删除 - 弹窗选择 =====
             if (batchDeleteBtn) {
                 batchDeleteBtn.addEventListener('click', function() {
                     const checked = document.querySelectorAll('.card-select:checked');
@@ -728,7 +761,52 @@
                         alert('请至少选择一张卡片');
                         return;
                     }
-                    if (!confirm(`确定要删除选中的 ${checked.length} 张卡片吗？此操作不可恢复！`)) return;
+                    // 显示删除弹窗
+                    showDeleteDialog(checked);
+                });
+            }
+            
+            function showDeleteDialog(checkedItems) {
+                // 构建弹窗
+                const dialog = document.createElement('div');
+                dialog.className = 'delete-dialog';
+                let html = `<div class="delete-dialog-box">
+                    <h3>选择要删除的卡片</h3>`;
+                checkedItems.forEach(cb => {
+                    const title = cb.dataset.title || '未命名';
+                    html += `<div class="card-item">
+                        <input type="checkbox" class="delete-card-select" data-issue="${cb.dataset.issue}" checked />
+                        <span>${title}</span>
+                    </div>`;
+                });
+                html += `<div class="card-item" style="border-bottom: none;">
+                        <input type="checkbox" id="deleteSelectAll" checked />
+                        <label for="deleteSelectAll">全选</label>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-cancel-dialog" onclick="this.closest('.delete-dialog').remove()">取消</button>
+                        <button class="btn-confirm" id="confirmDeleteBtn">确认删除</button>
+                    </div>
+                </div>`;
+                dialog.innerHTML = html;
+                document.body.appendChild(dialog);
+                
+                // 弹窗内全选
+                const delSelectAll = dialog.querySelector('#deleteSelectAll');
+                if (delSelectAll) {
+                    delSelectAll.addEventListener('change', function() {
+                        dialog.querySelectorAll('.delete-card-select').forEach(cb => cb.checked = this.checked);
+                    });
+                }
+                
+                // 确认删除
+                dialog.querySelector('#confirmDeleteBtn').addEventListener('click', function() {
+                    const selected = dialog.querySelectorAll('.delete-card-select:checked');
+                    if (selected.length === 0) {
+                        alert('请至少选择一张卡片');
+                        return;
+                    }
+                    if (!confirm(`确定要删除选中的 ${selected.length} 张卡片吗？此操作不可恢复！`)) return;
                     
                     let token = localStorage.getItem('github_token');
                     if (!token) {
@@ -744,13 +822,14 @@
                     batchDeleteBtn.disabled = true;
                     batchStatus.textContent = '⏳ 删除中...';
                     batchStatus.style.color = '#2b6ef0';
+                    dialog.remove();
                     
                     const repo = 'merryAndrew/HealthCertificate';
                     let completed = 0;
                     let failed = 0;
-                    const total = checked.length;
+                    const total = selected.length;
                     
-                    checked.forEach(cb => {
+                    selected.forEach(cb => {
                         const issueNumber = cb.dataset.issue;
                         const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}`;
                         fetch(url, {
@@ -779,7 +858,7 @@
                 });
             }
             
-            // ===== 单张卡片编辑功能 =====
+            // ===== 单张卡片编辑 =====
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 const wrapper = btn.closest('.cert-wrapper');
                 const issueNumber = wrapper.dataset.issueNumber;
@@ -795,12 +874,9 @@
                 const cancelBtn = document.getElementById('cancelBtn_' + issueNumber);
                 const editStatus = document.getElementById('editStatus_' + issueNumber);
                 
-                // 进入编辑状态
                 btn.addEventListener('click', function() {
-                    // 切换编辑状态
                     const isEditing = btn.textContent === '取消编辑';
                     if (isEditing) {
-                        // 退出编辑状态
                         btn.textContent = '编辑';
                         saveBtn.style.display = 'none';
                         cancelBtn.style.display = 'none';
@@ -810,7 +886,6 @@
                                 el.classList.remove('editable-field');
                             }
                         });
-                        // 恢复性别下拉为文本
                         if (genderEl) {
                             const select = genderEl.querySelector('.gender-select');
                             if (select) {
@@ -821,7 +896,6 @@
                         return;
                     }
                     
-                    // 进入编辑状态
                     btn.textContent = '取消编辑';
                     saveBtn.style.display = 'inline-block';
                     cancelBtn.style.display = 'inline-block';
@@ -831,7 +905,6 @@
                             el.classList.add('editable-field');
                         }
                     });
-                    // 性别改为下拉
                     if (genderEl) {
                         const currentGender = genderEl.textContent.trim();
                         genderEl.contentEditable = false;
@@ -845,14 +918,12 @@
                     editStatus.style.display = 'block';
                 });
                 
-                // 取消编辑
                 if (cancelBtn) {
                     cancelBtn.addEventListener('click', function() {
                         location.reload();
                     });
                 }
                 
-                // 保存编辑
                 if (saveBtn) {
                     saveBtn.addEventListener('click', function() {
                         const newTitle = titleEl ? titleEl.textContent.trim() : '广东省食品从业人员健康证明';
@@ -870,6 +941,13 @@
                         const newMiddle = middleTextEl ? middleTextEl.textContent.trim() : '广东省食品从业人员';
                         const newBottom = bottomTextEl ? bottomTextEl.textContent.trim() : '此健康信息已上报平台';
                         
+                        // 获取当前 Issue 的原有头像图片
+                        const imgUrl = wrapper.querySelector('.photo img')?.src || '';
+                        let avatarField = '';
+                        if (imgUrl && !imgUrl.includes('placeholder')) {
+                            avatarField = `\n头像图片：${imgUrl}`;
+                        }
+                        
                         let token = localStorage.getItem('github_token');
                         if (!token) {
                             token = prompt('请输入您的 GitHub Token（编辑需要）:');
@@ -883,7 +961,7 @@
                         
                         const repo = 'merryAndrew/HealthCertificate';
                         const url = `https://api.github.com/repos/${repo}/issues/${issueNumber}`;
-                        const body = `姓名：${newName}\n性别：${newGender}\n身份证：${newId}\n体检单位：${newHospital}\n体检日期：${newDate}\n中间文字：${newMiddle}\n底部文字：${newBottom}`;
+                        const body = `姓名：${newName}\n性别：${newGender}\n身份证：${newId}\n体检单位：${newHospital}\n体检日期：${newDate}\n中间文字：${newMiddle}\n底部文字：${newBottom}${avatarField}`;
                         
                         editStatus.textContent = '⏳ 保存中...';
                         editStatus.className = 'edit-status';
@@ -904,7 +982,6 @@
                         .then(() => {
                             editStatus.textContent = '✅ 保存成功！正在重新生成...';
                             editStatus.className = 'edit-status success';
-                            // 恢复只读
                             [titleEl, nameEl, genderEl, idEl, hospitalEl, dateEl, middleTextEl, bottomTextEl].forEach(el => {
                                 if (el) {
                                     el.contentEditable = false;
@@ -914,7 +991,6 @@
                             if (genderSelect) {
                                 genderEl.innerHTML = genderSelect.value;
                             }
-                            // 恢复按钮状态
                             btn.textContent = '编辑';
                             saveBtn.style.display = 'none';
                             cancelBtn.style.display = 'none';
