@@ -9,20 +9,9 @@
         body { background: #f2f4f8; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Roboto, Arial, sans-serif; padding: 20px; color: #1a2332; }
         .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 24px; border:1px solid #CCCCCC; }
 
-        /* ===== 头部：标题一行，按钮一行 ===== */
-        .header-title {
-            text-align: center;
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
+        /* 头部：标题一行，按钮一行（返回左，刷新右） */
+        .header-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
         .header-actions .btn-left { flex-shrink: 0; }
         .header-actions .btn-right { flex-shrink: 0; }
 
@@ -62,20 +51,10 @@
             vertical-align: middle;
             text-align: center;
         }
-        th {
-            background: #f6f8fa;
-            font-weight: 600;
-        }
+        th { background: #f6f8fa; font-weight: 600; }
         tr:hover td { background: #fafbfc; }
 
-        .avatar {
-            width: 50px;
-            height: 66px;
-            border-radius: 7px;
-            object-fit: cover;
-            background: #e1e4e8;
-            display: inline-block;
-        }
+        .avatar { width: 50px; height: 66px; border-radius: 7px; object-fit: cover; background: #e1e4e8; display: inline-block; }
         .name-cell { white-space: nowrap; }
         .no-data { text-align: center; padding: 40px 0; color: #8b949e; }
         .batch-bar { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 12px; border-top: 2px solid #f0f2f5; }
@@ -99,7 +78,7 @@
         .loading-overlay .loading-text { font-size: 16px; color: #1a2332; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
 
-        /* 模态框 */
+        /* 通用模态框 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
         .modal-overlay.active { display: block; }
         .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 16px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 28px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -123,6 +102,8 @@
         .modal-box .btn-submit-modal.hidden { display: none; }
         .modal-box .fail-actions { display: none; justify-content: center; margin-top: 16px; gap: 12px; }
         .modal-box .fail-actions.active { display: flex; }
+
+        /* 确认/进度弹窗（删除用） */
         .confirm-box .confirm-actions { display: flex; gap: 12px; margin-top: 20px; justify-content: center; }
         .confirm-box .confirm-actions .btn { padding: 10px 30px; font-size: 15px; }
         .confirm-box .confirm-actions.hidden { display: none; }
@@ -137,6 +118,12 @@
         .confirm-box .confirm-status.success { color: #1f883d; }
         .confirm-box .fail-actions { display: none; justify-content: center; margin-top: 16px; gap: 12px; }
         .confirm-box .fail-actions.active { display: flex; }
+
+        /* 版本选择模态框（新增） */
+        .version-box .version-actions { display: flex; gap: 12px; margin-top: 20px; justify-content: center; }
+        .version-box .version-actions .btn { padding: 10px 30px; font-size: 15px; min-width: 100px; }
+        .version-box .version-message { font-size: 16px; text-align: center; padding: 10px 0; color: #1a2332; }
+
         .avatar-zone { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #f8fafc; border: 1px dashed #d0d6de; border-radius: 12px; padding: 8px 12px; }
         .avatar-zone .file-btn { padding: 4px 14px; background: #eef2f7; border-radius: 6px; cursor: pointer; font-size: 13px; border: 1px solid #dce0e6; }
         .avatar-zone .upload-btn { padding: 4px 18px; background: #eef2f7; border-radius: 6px; cursor: pointer; font-size: 13px; border: none; }
@@ -149,7 +136,7 @@
 <body>
 
 <div class="container">
-    <!-- ===== 头部：标题一行，按钮一行（返回左，刷新右） ===== -->
+    <!-- 头部 -->
     <div class="header-title">📋 数据管理</div>
     <div class="header-actions">
         <button class="btn btn-success btn-left" onclick="window.history.back()">🔙 返回</button>
@@ -240,7 +227,7 @@
     </div>
 </div>
 
-<!-- 确认/进度弹窗 -->
+<!-- 确认/进度弹窗（删除用） -->
 <div class="modal-overlay" id="confirmModalOverlay">
     <div class="modal-box confirm-box">
         <h2 id="confirmTitle">确认操作</h2>
@@ -253,6 +240,19 @@
         <div class="confirm-status" id="confirmStatus">⏳ 正在处理并等待部署...</div>
         <div class="fail-actions" id="confirmFailActions">
             <button class="btn-close-fail" id="confirmFailCloseBtn">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 新增：版本选择弹窗 ===== -->
+<div class="modal-overlay" id="versionModalOverlay">
+    <div class="modal-box version-box">
+        <button class="close-btn" id="versionModalCloseBtn">&times;</button>
+        <h2 id="versionModalTitle">选择版本</h2>
+        <div class="version-message" id="versionMessage">请选择要查看的健康证版本</div>
+        <div class="version-actions">
+            <button class="btn btn-primary" id="versionBtnA">📄 A版</button>
+            <button class="btn btn-info" id="versionBtnB">📄 B版</button>
         </div>
     </div>
 </div>
@@ -306,6 +306,13 @@
     var confirmFailActions = document.getElementById('confirmFailActions');
     var confirmFailCloseBtn = document.getElementById('confirmFailCloseBtn');
 
+    // 版本选择弹窗元素
+    var versionModalOverlay = document.getElementById('versionModalOverlay');
+    var versionModalCloseBtn = document.getElementById('versionModalCloseBtn');
+    var versionBtnA = document.getElementById('versionBtnA');
+    var versionBtnB = document.getElementById('versionBtnB');
+    var versionMessage = document.getElementById('versionMessage');
+
     var f_title = document.getElementById('f_title');
     var f_name = document.getElementById('f_name');
     var f_gender = document.getElementById('f_gender');
@@ -331,6 +338,10 @@
     var MAX_POLLS = 24;
     var originalData = null;
 
+    // 存储当前要查看的 issue 标题，供版本选择使用
+    var pendingViewTitle = '';
+
+    // ---- Toast 居中 ----
     function showToastCenter(icon, msg, sub) {
         toastIcon.textContent = icon || '✅';
         toastMsg.textContent = msg || '操作成功';
@@ -347,6 +358,7 @@
     }
     function hideLoading() { loadingOverlay.classList.remove('active'); }
 
+    // ---- 解析 Issue ----
     function parseIssue(issue) {
         var body = issue.body || '';
         var get = function(key) { var m = body.match(new RegExp(key + '[：:]\\s*(.+)')); return m ? m[1].trim() : ''; };
@@ -415,7 +427,7 @@
         var viewBtns = document.querySelectorAll('.view-btn');
         for (var l = 0; l < viewBtns.length; l++) {
             (function(btn) {
-                btn.onclick = function() { viewCertificate(parseInt(this.dataset.id)); };
+                btn.onclick = function() { showVersionSelect(parseInt(this.dataset.id)); };
             })(viewBtns[l]);
         }
     }
@@ -460,7 +472,8 @@
         bindEvents();
     }
 
-    function viewCertificate(id) {
+    // ---- 显示版本选择弹窗 ----
+    function showVersionSelect(id) {
         var issue = null;
         for (var i = 0; i < allIssues.length; i++) {
             if (allIssues[i].id === id) { issue = allIssues[i]; break; }
@@ -469,11 +482,38 @@
             showToastCenter('⚠️', '未找到该数据', '');
             return;
         }
-        var encodedTitle = encodeURIComponent(issue.title);
-        var url = 'https://merryAndrew.github.io/HealthCertificate/card.html?id=' + encodedTitle;
-        window.open(url, '_blank');
+        pendingViewTitle = issue.title;
+        versionMessage.textContent = '请选择要查看「' + issue.title + '」的版本';
+        versionModalOverlay.classList.add('active');
     }
 
+    // ---- 版本选择按钮事件 ----
+    versionBtnA.onclick = function() {
+        if (!pendingViewTitle) return;
+        var encodedTitle = encodeURIComponent(pendingViewTitle);
+        var url = 'https://merryAndrew.github.io/HealthCertificate/card.html?id=' + encodedTitle;
+        window.open(url, '_blank');
+        versionModalOverlay.classList.remove('active');
+        pendingViewTitle = '';
+    };
+
+    versionBtnB.onclick = function() {
+        if (!pendingViewTitle) return;
+        var encodedTitle = encodeURIComponent(pendingViewTitle);
+        var url = 'https://merryAndrew.github.io/HealthCertificate/index.html?id=' + encodedTitle;
+        window.open(url, '_blank');
+        versionModalOverlay.classList.remove('active');
+        pendingViewTitle = '';
+    };
+
+    function closeVersionModal() {
+        versionModalOverlay.classList.remove('active');
+        pendingViewTitle = '';
+    }
+    versionModalCloseBtn.onclick = closeVersionModal;
+    versionModalOverlay.onclick = function(e) { if (e.target === this) closeVersionModal(); };
+
+    // ---- 加载列表 ----
     function loadIssues() {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) {
@@ -526,6 +566,7 @@
         render();
     };
 
+    // ---- 打开编辑 ----
     function openEditModal(id) {
         var issue = null;
         for (var i = 0; i < allIssues.length; i++) {
@@ -578,6 +619,7 @@
         editModalOverlay.classList.add('active');
     }
 
+    // ---- 检测数据是否变化 ----
     function hasDataChanged() {
         var current = {
             title: f_title.value.trim(),
@@ -603,6 +645,7 @@
         return false;
     }
 
+    // ===== 核心：精准轮询单条卡片的 data-version =====
     function pollCardForIssue(issueNumber, oldVersion, onSuccess, onFail) {
         var count = 0;
         if (pollTimer) clearInterval(pollTimer);
@@ -653,6 +696,7 @@
         pollTimer = setInterval(check, 5000);
     }
 
+    // ---- 显示编辑失败状态 ----
     function showEditFail(errMsg) {
         editProgress.classList.remove('active');
         editStatus.textContent = '❌ ' + errMsg;
@@ -662,6 +706,7 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
+    // ---- 显示确认框失败状态 ----
     function showConfirmFail(errMsg) {
         confirmProgress.classList.remove('active');
         confirmProgress.querySelector('.bar').className = 'bar error';
@@ -672,6 +717,7 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
+    // ---- 编辑提交 ----
     editForm.onsubmit = function(e) {
         e.preventDefault();
 
@@ -746,6 +792,7 @@
         });
     };
 
+    // ---- 编辑失败关闭 ----
     editFailCloseBtn.onclick = function() {
         editModalOverlay.classList.remove('active');
         editProgress.classList.remove('active');
@@ -773,6 +820,7 @@
     editModalCloseBtn.onclick = closeEditModal;
     editModalOverlay.onclick = function(e) { if (e.target === this) closeEditModal(); };
 
+    // ---- 确认删除（单条） ----
     function confirmDelete(id) {
         var issue = null;
         for (var i = 0; i < allIssues.length; i++) {
@@ -793,6 +841,7 @@
         confirmModalOverlay.classList.add('active');
     }
 
+    // ---- 批量删除 ----
     batchDeleteBtn.onclick = function() {
         if (selectedIds.size === 0) { showToastCenter('⚠️', '请先选择要删除的数据', ''); return; }
         confirmTitle.textContent = '确认批量删除';
@@ -809,6 +858,7 @@
         confirmModalOverlay.classList.add('active');
     };
 
+    // ---- 执行单条删除 ----
     function doDelete(issue) {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); confirmModalOverlay.classList.remove('active'); return; }
@@ -848,6 +898,7 @@
         });
     }
 
+    // ---- 执行批量删除 ----
     function doBatchDelete() {
         var repo = getRepo(), token = getToken();
         if (!repo || !token) { showToastCenter('⚠️', '请先配置仓库和 Token', ''); confirmModalOverlay.classList.remove('active'); return; }
@@ -897,6 +948,7 @@
             });
     }
 
+    // ---- 确认框失败关闭 ----
     confirmFailCloseBtn.onclick = function() {
         confirmModalOverlay.classList.remove('active');
         confirmProgress.classList.remove('active');
@@ -911,6 +963,7 @@
     confirmCancelBtn.onclick = function() { confirmModalOverlay.classList.remove('active'); };
     confirmModalOverlay.onclick = function(e) { if (e.target === this) { confirmModalOverlay.classList.remove('active'); if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } } };
 
+    // ---- 头像上传 ----
     editFileBtn.onclick = function() { editAvatarFile.click(); };
     editAvatarFile.onchange = function() { editFileName.textContent = this.files && this.files.length > 0 ? this.files[0].name : '未选择'; };
     editUploadBtn.onclick = function() {
