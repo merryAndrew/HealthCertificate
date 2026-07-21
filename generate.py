@@ -6,7 +6,6 @@ from io import BytesIO
 import base64
 import shutil
 import urllib.parse
-from qrcode.image.pil import PilImage  # 确保已安装 Pillow
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
@@ -45,13 +44,31 @@ def format_date(raw_date):
     return raw_date
 
 def generate_qr_base64(url):
-    """生成透明背景的二维码 base64"""
-    qr = qrcode.QRCode(box_size=10, border=2)
-    qr.add_data(url)
-    qr.make(fit=True)
-    qr_img = qr.make_image(image_factory=PilImage, fill_color='black', back_color=(0, 0, 0, 0))
+    """生成透明背景二维码（稳定版）"""
+    # 1. 生成标准二维码（带白色背景）
+    qr = qrcode.make(url, box_size=10, border=2)
+    
+    # 2. 转换为 RGBA 模式
+    img = qr.convert('RGBA')
+    
+    # 3. 获取图片数据
+    data = img.getdata()
+    new_data = []
+    
+    # 4. 将白色像素替换为透明
+    for pixel in data:
+        # 如果是白色或接近白色，设为透明
+        if pixel[0] > 200 and pixel[1] > 200 and pixel[2] > 200:
+            new_data.append((255, 255, 255, 0))
+        else:
+            new_data.append(pixel)
+    
+    # 5. 应用新数据
+    img.putdata(new_data)
+    
+    # 6. 转 base64
     buffered = BytesIO()
-    qr_img.save(buffered, format="PNG")
+    img.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode()
 
 def build_card(issue, style='A'):
@@ -99,7 +116,7 @@ def build_card(issue, style='A'):
     encoded_title = urllib.parse.quote(title)
     page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
 
-    # ===== A版和B版都使用透明二维码 =====
+    # ===== 生成透明二维码（A版和B版统一使用） =====
     qr_base64 = generate_qr_base64(page_url)
 
     issue_number = issue['number']
