@@ -6,6 +6,7 @@ from io import BytesIO
 import base64
 import shutil
 import urllib.parse
+from qrcode.image.pil import PilImage  # 确保已安装 Pillow
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
@@ -42,6 +43,16 @@ def format_date(raw_date):
         year, month, day = match.groups()
         return f'{year}年{int(month)}月{int(day)}日 (有效期一年)'
     return raw_date
+
+def generate_qr_base64(url):
+    """生成透明背景的二维码 base64"""
+    qr = qrcode.QRCode(box_size=10, border=2)
+    qr.add_data(url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(image_factory=PilImage, fill_color='black', back_color=(0, 0, 0, 0))
+    buffered = BytesIO()
+    qr_img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode()
 
 def build_card(issue, style='A'):
     title = issue['title']
@@ -87,14 +98,12 @@ def build_card(issue, style='A'):
 
     encoded_title = urllib.parse.quote(title)
     page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
-    qr = qrcode.make(page_url)
-    buffered = BytesIO()
-    qr.save(buffered, format="PNG")
-    qr_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-    # ===== 这里添加 data-issue 和 data-version =====
+    # ===== A版和B版都使用透明二维码 =====
+    qr_base64 = generate_qr_base64(page_url)
+
     issue_number = issue['number']
-    issue_version = issue['updated_at']  # GitHub 提供的最后更新时间
+    issue_version = issue['updated_at']
 
     if style == 'A':
         bottom_html = ''
