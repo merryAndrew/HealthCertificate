@@ -6,6 +6,7 @@ from io import BytesIO
 import base64
 import shutil
 import urllib.parse
+from PIL import Image
 
 REPO = os.getenv('GITHUB_REPOSITORY')
 TOKEN = os.getenv('GITHUB_TOKEN')
@@ -43,30 +44,27 @@ def format_date(raw_date):
         return f'{year}年{int(month)}月{int(day)}日 (有效期一年)'
     return raw_date
 
-def generate_qr_base64(url):
-    """生成透明背景二维码（稳定版）"""
-    # 1. 生成标准二维码（带白色背景）
-    qr = qrcode.make(url, box_size=10, border=2)
+def generate_qr_b64(page_url, bg_color=None):
+    """
+    生成二维码 base64
+    - A版：bg_color=None，保持白色背景
+    - B版：bg_color='#f8f8f8'，替换背景色
+    """
+    qr = qrcode.make(page_url, box_size=10, border=2)
+    img = qr.convert('RGB')
     
-    # 2. 转换为 RGBA 模式
-    img = qr.convert('RGBA')
+    if bg_color:
+        # 将白色背景替换为指定颜色
+        target_rgb = tuple(int(bg_color[i:i+2], 16) for i in (1, 3, 5))
+        data = img.getdata()
+        new_data = []
+        for pixel in data:
+            if pixel[0] > 200 and pixel[1] > 200 and pixel[2] > 200:
+                new_data.append(target_rgb)
+            else:
+                new_data.append(pixel)
+        img.putdata(new_data)
     
-    # 3. 获取图片数据
-    data = img.getdata()
-    new_data = []
-    
-    # 4. 将白色像素替换为透明
-    for pixel in data:
-        # 如果是白色或接近白色，设为透明
-        if pixel[0] > 200 and pixel[1] > 200 and pixel[2] > 200:
-            new_data.append((255, 255, 255, 0))
-        else:
-            new_data.append(pixel)
-    
-    # 5. 应用新数据
-    img.putdata(new_data)
-    
-    # 6. 转 base64
     buffered = BytesIO()
     img.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode()
@@ -116,8 +114,12 @@ def build_card(issue, style='A'):
     encoded_title = urllib.parse.quote(title)
     page_url = f'https://{USER}.github.io/{REPO_NAME}/index.html?id={encoded_title}'
 
-    # ===== 生成透明二维码（A版和B版统一使用） =====
-    qr_base64 = generate_qr_base64(page_url)
+    # ===== A版：保持白色背景（原样） =====
+    # ===== B版：背景色改为 #f8f8f8（与B版卡片背景一致） =====
+    if style == 'A':
+        qr_base64 = generate_qr_b64(page_url, bg_color=None)
+    else:
+        qr_base64 = generate_qr_b64(page_url, bg_color='#f8f8f8')
 
     issue_number = issue['number']
     issue_version = issue['updated_at']
