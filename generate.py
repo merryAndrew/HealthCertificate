@@ -179,7 +179,7 @@ def build_card(issue, style='A'):
                     </div>
                     <div class="photo">
                         <div class="seal-container">
-                            <img class="seal-img" src="https://cdn.jsdelivr.net/gh/merryAndrew/imge@main/than.png" alt="印章图片">
+                            <img class="seal-img" src="https://i.ibb.co/6JJQ4HMd/retouch-2025110318364084.png" alt="印章图片">
                         </div>
                         <img src="{img_url}" alt="持证人照片">
                     </div>
